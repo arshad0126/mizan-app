@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMizanStore } from '@/store/useMizanStore';
+import AnimatedCounter from '@/components/AnimatedCounter';
 import { formatAmount } from '@/lib/utils';
 import { CreditCard, Landmark, Wallet, Banknote, Sparkles } from 'lucide-react';
 
@@ -93,7 +94,7 @@ export default function AccountSwiper() {
                   <span className={`text-xl font-black tracking-tight transition-all duration-300 ${
                     isHiddenMode ? 'text-[#1E1E1E] dark:text-[#F7F9F7] filter blur-xs' : 'text-white'
                   }`}>
-                    {formatAmount(acc.balance, privacyMode)}
+                    <AnimatedCounter value={acc.balance} privacyMode={privacyMode} />
                   </span>
                   <span className={`text-xxs font-bold px-1.5 py-0.5 rounded-md ${
                     isHiddenMode

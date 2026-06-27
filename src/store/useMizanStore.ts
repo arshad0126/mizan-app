@@ -7,19 +7,27 @@ import {
   ZakatRecord,
   Settings,
   CustomCategory,
+  Subscription,
   getAccounts,
   getTransactions,
   getBudgets,
   getGoals,
   getZakatRecords,
   getSettings,
+  getSubscriptions,
   saveAccount,
   saveTransaction,
   saveBudget,
   saveGoal,
   saveZakatRecord,
   saveSettings,
+  saveSubscription,
+  deleteAccount,
+  deleteGoal,
+  deleteBudget,
+  deleteSubscription,
   initSeedData,
+  wipeDatabase,
 } from '@/lib/db';
 
 export type PrivacyMode = 'normal' | 'hide-all' | 'hide-amounts' | 'approximate';
@@ -31,6 +39,7 @@ interface MizanState {
   budgets: Budget[];
   goals: Goal[];
   zakatRecords: ZakatRecord[];
+  subscriptions: Subscription[];
   
   // Settings & User States
   isOnboarded: boolean;
@@ -57,14 +66,31 @@ interface MizanState {
   toggleTheme: () => Promise<void>;
   addCustomCategory: (name: string, type: 'expense' | 'income' | 'sadaqah') => Promise<void>;
   addTransaction: (tx: Omit<Transaction, 'id'>) => Promise<void>;
+  
+  // CRUD Actions
   addAccount: (acc: Account) => Promise<void>;
+  removeAccount: (id: string) => Promise<void>;
+  
+  addSubscription: (sub: Omit<Subscription, 'id'>) => Promise<void>;
+  removeSubscription: (id: string) => Promise<void>;
+  
+  addGoal: (goal: Omit<Goal, 'id'>) => Promise<void>;
+  removeGoal: (id: string) => Promise<void>;
+  
+  addBudgetEnvelope: (category: string, allocated: number) => Promise<void>;
+  removeBudgetEnvelope: (category: string) => Promise<void>;
+  
   updateBudget: (category: string, allocated: number) => Promise<void>;
   contributeToGoal: (goalId: string, amount: number, sourceAccountId: string) => Promise<void>;
+  
+  updateSettings: (name: string, pin: string, autoLockDuration: number) => Promise<void>;
+  resetApp: () => Promise<void>;
+  
   setPrivacyMode: (mode: PrivacyMode) => void;
   setActiveTab: (tab: 'home' | 'timeline' | 'budget' | 'goals' | 'islamic' | 'profile') => void;
   setLocked: (locked: boolean) => void;
   setAutoLockDuration: (duration: number) => void;
-  setGuestMode: (guest: boolean) => void;
+  setGuestMode: (isGuestMode: boolean) => void;
   saveZakatRecord: (record: ZakatRecord) => Promise<void>;
   allocatePaydayWizard: (incomeAmount: number, allocations: { category: string; amount: number; accountId: string }[]) => Promise<void>;
 }
@@ -75,6 +101,7 @@ export const useMizanStore = create<MizanState>((set, get) => ({
   budgets: [],
   goals: [],
   zakatRecords: [],
+  subscriptions: [],
   
   isOnboarded: false,
   userName: '',
@@ -94,13 +121,13 @@ export const useMizanStore = create<MizanState>((set, get) => ({
     try {
       await initSeedData();
       
-      // Load Settings
       const settings = await getSettings();
       let isOnboarded = false;
       let userName = 'Guest';
       let userPin = '';
       let theme: 'light' | 'dark' = 'light';
       let customCategories: CustomCategory[] = [];
+      let autoLockDuration = 60;
 
       if (settings) {
         isOnboarded = settings.isOnboarded;
@@ -108,8 +135,8 @@ export const useMizanStore = create<MizanState>((set, get) => ({
         userPin = settings.userPin;
         theme = settings.theme;
         customCategories = settings.customCategories || [];
+        autoLockDuration = settings.autoLockDuration || 60;
 
-        // Apply theme color class to HTML element
         if (typeof document !== 'undefined') {
           if (theme === 'dark') {
             document.documentElement.classList.add('dark');
@@ -119,17 +146,15 @@ export const useMizanStore = create<MizanState>((set, get) => ({
         }
       }
 
-      // Load Other DB Entities
       const accounts = await getAccounts();
       const transactions = await getTransactions();
       const budgets = await getBudgets();
       const goals = await getGoals();
       const zakatRecords = await getZakatRecords();
+      const subscriptions = await getSubscriptions();
       
-      // Sort transactions descending
       transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-      // If we are onboarded and PIN is set, lock on restart
       const isLocked = isOnboarded && userPin !== '';
 
       set({
@@ -138,12 +163,14 @@ export const useMizanStore = create<MizanState>((set, get) => ({
         budgets,
         goals,
         zakatRecords,
+        subscriptions,
         isOnboarded,
         userName,
         userPin,
         theme,
         customCategories,
         isLocked,
+        autoLockDuration,
         isLoading: false,
       });
     } catch (e) {
@@ -155,18 +182,18 @@ export const useMizanStore = create<MizanState>((set, get) => ({
   completeOnboarding: async (name, pin, initialAccounts) => {
     set({ isLoading: true });
     try {
-      // 1. Save Settings
       const currentTheme = get().theme;
-      const settingsObj: Settings = {
+      const settingsObj = {
         id: 'app_settings',
         userName: name,
         userPin: pin,
         isOnboarded: true,
         theme: currentTheme,
+        autoLockDuration: 60,
+        customCategories: [],
       };
       await saveSettings(settingsObj);
 
-      // 2. Save Accounts
       const mappedAccounts: Account[] = initialAccounts.map((acc, index) => ({
         id: `acc-${index + 1}`,
         name: acc.name,
@@ -180,18 +207,26 @@ export const useMizanStore = create<MizanState>((set, get) => ({
         await saveAccount(acc);
       }
 
-      // 3. Save Default Goals
+      // Pre-seed Hajj and Emergency goals
       const defaultGoals: Goal[] = [
         { id: 'goal-1', title: 'Emergency Fund', target: 100000, saved: 0, category: 'Emergency', timeline: 'October 2026', icon: 'ShieldCheck' },
         { id: 'goal-2', title: 'Hajj Portfolio', target: 400000, saved: 0, category: 'Hajj', timeline: 'June 2028', icon: 'Milestone' },
-        { id: 'goal-3', title: 'Parents Hajj/Umrah', target: 200000, saved: 0, category: 'Umrah', timeline: 'December 2027', icon: 'Heart' },
       ];
 
       for (const g of defaultGoals) {
         await saveGoal(g);
       }
 
-      // 4. Save Default Budget Categories (Initialized to zero-allocations)
+      // Pre-seed a starting subscription
+      const defaultSubs: Subscription[] = [
+        { id: 'sub-1', name: 'iCloud Storage', cost: 75, icon: '☁️', renewal: '02 July' },
+        { id: 'sub-2', name: 'ChatGPT Plus', cost: 1999, icon: '🤖', renewal: '10 July' },
+        { id: 'sub-3', name: 'Netflix Premium', cost: 649, icon: '🎬', renewal: '18 July' },
+      ];
+      for (const sub of defaultSubs) {
+        await saveSubscription(sub);
+      }
+
       const defaultBudgets: Budget[] = [
         { category: 'Needs', allocated: 0, spent: 0 },
         { category: 'Parents', allocated: 0, spent: 0 },
@@ -211,6 +246,7 @@ export const useMizanStore = create<MizanState>((set, get) => ({
         accounts: mappedAccounts,
         goals: defaultGoals,
         budgets: defaultBudgets,
+        subscriptions: defaultSubs,
         transactions: [],
         zakatRecords: [],
         customCategories: [],
@@ -227,7 +263,6 @@ export const useMizanStore = create<MizanState>((set, get) => ({
     const currentTheme = get().theme;
     const newTheme = currentTheme === 'light' ? 'dark' : 'light';
     
-    // Save settings
     const settings = await getSettings();
     if (settings) {
       await saveSettings({ ...settings, theme: newTheme });
@@ -238,10 +273,10 @@ export const useMizanStore = create<MizanState>((set, get) => ({
         userPin: get().userPin || '',
         isOnboarded: get().isOnboarded,
         theme: newTheme,
+        autoLockDuration: 60,
       });
     }
 
-    // Apply class to HTML element
     if (typeof document !== 'undefined') {
       if (newTheme === 'dark') {
         document.documentElement.classList.add('dark');
@@ -257,7 +292,6 @@ export const useMizanStore = create<MizanState>((set, get) => ({
     const settings = await getSettings();
     const currentCats = settings?.customCategories || [];
     
-    // Check if already exists to avoid duplicates
     if (currentCats.some(c => c.name.toLowerCase() === name.trim().toLowerCase() && c.type === type)) {
       return;
     }
@@ -275,10 +309,94 @@ export const useMizanStore = create<MizanState>((set, get) => ({
         isOnboarded: get().isOnboarded,
         theme: get().theme,
         customCategories: updatedCats,
+        autoLockDuration: 60,
       });
     }
 
     set({ customCategories: updatedCats });
+  },
+
+  updateSettings: async (name, pin, autoLockDuration) => {
+    const settings = await getSettings();
+    const updatedSettings = {
+      id: 'app_settings',
+      userName: name.trim(),
+      userPin: pin.trim(),
+      isOnboarded: true,
+      theme: get().theme,
+      customCategories: get().customCategories,
+      autoLockDuration: autoLockDuration,
+    };
+    await saveSettings(updatedSettings);
+    set({ userName: name.trim(), userPin: pin.trim(), autoLockDuration });
+  },
+
+  resetApp: async () => {
+    set({ isLoading: true });
+    await wipeDatabase();
+    set({
+      accounts: [],
+      transactions: [],
+      budgets: [],
+      goals: [],
+      zakatRecords: [],
+      subscriptions: [],
+      isOnboarded: false,
+      userName: '',
+      userPin: '',
+      isLocked: false,
+      activeTab: 'home',
+      isLoading: false,
+    });
+  },
+
+  // Account actions
+  addAccount: async (acc) => {
+    await saveAccount(acc);
+    set({ accounts: [...get().accounts, acc] });
+  },
+
+  removeAccount: async (id) => {
+    await deleteAccount(id);
+    set({ accounts: get().accounts.filter(a => a.id !== id) });
+  },
+
+  // Subscription Actions
+  addSubscription: async (subData) => {
+    const id = 'sub-' + Math.random().toString(36).substring(2, 9);
+    const newSub = { ...subData, id };
+    await saveSubscription(newSub);
+    set({ subscriptions: [...get().subscriptions, newSub] });
+  },
+
+  removeSubscription: async (id) => {
+    await deleteSubscription(id);
+    set({ subscriptions: get().subscriptions.filter(s => s.id !== id) });
+  },
+
+  // Goals actions
+  addGoal: async (goalData) => {
+    const id = 'goal-' + Math.random().toString(36).substring(2, 9);
+    const newGoal = { ...goalData, id };
+    await saveGoal(newGoal);
+    set({ goals: [...get().goals, newGoal] });
+  },
+
+  removeGoal: async (id) => {
+    await deleteGoal(id);
+    set({ goals: get().goals.filter(g => g.id !== id) });
+  },
+
+  // Budget actions
+  addBudgetEnvelope: async (category, allocated) => {
+    const newBudget = { category, allocated, spent: 0 };
+    await saveBudget(newBudget);
+    set({ budgets: [...get().budgets, newBudget] });
+  },
+
+  removeBudgetEnvelope: async (category) => {
+    await deleteBudget(category);
+    set({ budgets: get().budgets.filter(b => b.category !== category) });
   },
 
   addTransaction: async (txData) => {
@@ -322,6 +440,14 @@ export const useMizanStore = create<MizanState>((set, get) => ({
         budgetGroup = 'Charity';
       } else if (budgetCategory === 'Savings' || budgetCategory === 'Investment') {
         budgetGroup = 'Savings';
+      } else {
+        // Fallback for custom categories: check settings custom mapping or default to wants
+        // To be smart, we can search if there's a custom mapping, or search budgets
+        // Let's check if the category name itself matches a budget category directly
+        const matchedBudget = currentBudgets.find(b => b.category.toLowerCase() === budgetCategory.toLowerCase());
+        if (matchedBudget) {
+          budgetGroup = matchedBudget.category;
+        }
       }
       
       const bIndex = currentBudgets.findIndex(b => b.category === budgetGroup);
@@ -342,11 +468,6 @@ export const useMizanStore = create<MizanState>((set, get) => ({
       accounts: currentAccounts,
       budgets: currentBudgets,
     });
-  },
-
-  addAccount: async (acc) => {
-    await saveAccount(acc);
-    set({ accounts: [...get().accounts, acc] });
   },
 
   updateBudget: async (category, allocated) => {

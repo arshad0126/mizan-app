@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useMizanStore } from '@/store/useMizanStore';
-import { formatAmount } from '@/lib/utils';
+import AnimatedCounter from '@/components/AnimatedCounter';
 import { Coins, PiggyBank, ShieldCheck, CalendarRange, HeartHandshake } from 'lucide-react';
 
 export default function WealthCard() {
@@ -58,7 +58,7 @@ export default function WealthCard() {
         <h2 className={`text-4xl font-extrabold tracking-tight mt-1 transition-all duration-300 ${
           isHiddenMode ? 'text-[#1E1E1E] dark:text-[#F7F9F7] filter blur-sm' : 'text-white'
         }`}>
-          {formatAmount(totalWealth, privacyMode)}
+          <AnimatedCounter value={totalWealth} privacyMode={privacyMode} />
         </h2>
 
         <div className={`w-full h-px my-5 ${
@@ -80,7 +80,7 @@ export default function WealthCard() {
               <span className={`text-sm font-bold ${
                 isHiddenMode ? 'text-[#1E1E1E] dark:text-[#F7F9F7]' : 'text-white'
               }`}>
-                {formatAmount(todaysBudget, isHiddenMode ? 'hide-all' : privacyMode)}
+                <AnimatedCounter value={todaysBudget} privacyMode={isHiddenMode ? 'hide-all' : privacyMode} />
               </span>
             </div>
           </div>
@@ -99,7 +99,7 @@ export default function WealthCard() {
               <span className={`text-sm font-bold ${
                 isHiddenMode ? 'text-[#1E1E1E] dark:text-[#F7F9F7]' : 'text-white'
               }`}>
-                {formatAmount(monthlyRemaining, isHiddenMode ? 'hide-all' : privacyMode)}
+                <AnimatedCounter value={monthlyRemaining} privacyMode={isHiddenMode ? 'hide-all' : privacyMode} />
               </span>
             </div>
           </div>
@@ -118,7 +118,7 @@ export default function WealthCard() {
               <span className={`text-sm font-bold ${
                 isHiddenMode ? 'text-[#1E1E1E] dark:text-[#F7F9F7]' : 'text-white'
               }`}>
-                {formatAmount(savingsTotal, isHiddenMode ? 'hide-all' : privacyMode)}
+                <AnimatedCounter value={savingsTotal} privacyMode={isHiddenMode ? 'hide-all' : privacyMode} />
               </span>
             </div>
           </div>
@@ -137,7 +137,7 @@ export default function WealthCard() {
               <span className={`text-sm font-bold ${
                 isHiddenMode ? 'text-[#1E1E1E] dark:text-[#F7F9F7]' : 'text-white'
               }`}>
-                {formatAmount(emergencySaved, isHiddenMode ? 'hide-all' : privacyMode)}
+                <AnimatedCounter value={emergencySaved} privacyMode={isHiddenMode ? 'hide-all' : privacyMode} />
               </span>
             </div>
           </div>

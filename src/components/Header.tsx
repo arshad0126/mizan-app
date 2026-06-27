@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Eye, EyeOff, Lock, Wifi, WifiOff, Shield } from 'lucide-react';
 import { useMizanStore, PrivacyMode } from '@/store/useMizanStore';
+import { getHijriDate as calculateHijri } from '@/lib/utils';
 
 export default function Header() {
   const { privacyMode, setPrivacyMode, setLocked, userName } = useMizanStore();
@@ -26,11 +27,17 @@ export default function Header() {
   }, []);
 
   const getGregorianDate = () => {
-    return 'Sunday, 28 June 2026';
+    const today = new Date();
+    return today.toLocaleDateString('en-IN', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
   };
 
   const getHijriDate = () => {
-    return '3 Muharram 1448 AH';
+    return calculateHijri(new Date());
   };
 
   const privacyOptions: { value: PrivacyMode; label: string; desc: string }[] = [

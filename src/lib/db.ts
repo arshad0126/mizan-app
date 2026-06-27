@@ -1,6 +1,6 @@
 // Client-side IndexedDB wrapper for Mizan
 const DB_NAME = 'mizan_local_db';
-const DB_VERSION = 2; // Incremented version to support settings store
+const DB_VERSION = 3; // Incremented version to support subscriptions store
 
 export interface Account {
   id: string;
@@ -29,7 +29,7 @@ export interface Transaction {
 }
 
 export interface Budget {
-  category: string; // "Needs", "Parents", "Savings", "Charity", "Wants"
+  category: string;
   allocated: number;
   spent: number;
 }
@@ -59,6 +59,14 @@ export interface ZakatRecord {
   isPaid: boolean;
 }
 
+export interface Subscription {
+  id: string;
+  name: string;
+  cost: number;
+  icon: string;
+  renewal: string;
+}
+
 export interface CustomCategory {
   name: string;
   type: 'expense' | 'income' | 'sadaqah';
@@ -71,6 +79,7 @@ export interface Settings {
   isOnboarded: boolean;
   theme: 'light' | 'dark';
   customCategories?: CustomCategory[];
+  autoLockDuration?: number;
 }
 
 let dbInstance: IDBDatabase | null = null;
@@ -113,14 +122,15 @@ function getDB(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains('settings')) {
         db.createObjectStore('settings', { keyPath: 'id' });
       }
+      if (!db.objectStoreNames.contains('subscriptions')) {
+        db.createObjectStore('subscriptions', { keyPath: 'id' });
+      }
     };
   });
 }
 
-// Populate the Database with seeded data if it is empty (Replaced with Onboarding Wizard check)
+// Populate the Database with seeded data if it is empty
 export async function initSeedData(): Promise<void> {
-  // We no longer auto-seed transactions or accounts.
-  // Instead, the setup onboarding wizard will populate custom balances.
   try {
     await getDB();
   } catch (e) {
@@ -155,6 +165,20 @@ function putItem<T>(storeName: string, item: T): Promise<void> {
   });
 }
 
+// Generic delete item helper
+function deleteItem(storeName: string, key: string): Promise<void> {
+  return getDB().then((db) => {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readwrite');
+      const store = tx.objectStore(storeName);
+      const req = store.delete(key);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+      tx.oncomplete = () => resolve();
+    });
+  });
+}
+
 // API methods
 export async function getAccounts(): Promise<Account[]> {
   return getAll<Account>('accounts');
@@ -162,6 +186,10 @@ export async function getAccounts(): Promise<Account[]> {
 
 export async function saveAccount(account: Account): Promise<void> {
   return putItem('accounts', account);
+}
+
+export async function deleteAccount(id: string): Promise<void> {
+  return deleteItem('accounts', id);
 }
 
 export async function getTransactions(): Promise<Transaction[]> {
@@ -180,6 +208,10 @@ export async function saveBudget(budget: Budget): Promise<void> {
   return putItem('budgets', budget);
 }
 
+export async function deleteBudget(category: string): Promise<void> {
+  return deleteItem('budgets', category);
+}
+
 export async function getGoals(): Promise<Goal[]> {
   return getAll<Goal>('goals');
 }
@@ -188,12 +220,28 @@ export async function saveGoal(goal: Goal): Promise<void> {
   return putItem('goals', goal);
 }
 
+export async function deleteGoal(id: string): Promise<void> {
+  return deleteItem('goals', id);
+}
+
 export async function getZakatRecords(): Promise<ZakatRecord[]> {
   return getAll<ZakatRecord>('zakat');
 }
 
 export async function saveZakatRecord(record: ZakatRecord): Promise<void> {
   return putItem('zakat', record);
+}
+
+export async function getSubscriptions(): Promise<Subscription[]> {
+  return getAll<Subscription>('subscriptions');
+}
+
+export async function saveSubscription(sub: Subscription): Promise<void> {
+  return putItem('subscriptions', sub);
+}
+
+export async function deleteSubscription(id: string): Promise<void> {
+  return deleteItem('subscriptions', id);
 }
 
 export async function getSettings(): Promise<Settings | null> {
@@ -213,4 +261,16 @@ export async function getSettings(): Promise<Settings | null> {
 
 export async function saveSettings(settings: Settings): Promise<void> {
   return putItem('settings', settings);
+}
+
+export function wipeDatabase(): Promise<void> {
+  if (dbInstance) {
+    dbInstance.close();
+    dbInstance = null;
+  }
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.deleteDatabase(DB_NAME);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
 }
