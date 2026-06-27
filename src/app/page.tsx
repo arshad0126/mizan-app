@@ -543,21 +543,19 @@ export default function Dashboard() {
       </main>
 
       {/* Floating Action Buttons */}
-      <div className="fixed bottom-36 right-6 z-30">
+      <div className="fixed bottom-20 right-6 z-30 flex flex-col items-center gap-3">
         <button
           onClick={toggleTheme}
-          className="w-14 h-14 rounded-full bg-white dark:bg-[#1E221E] hover:bg-[#F7F9F7] dark:hover:bg-[#2C322E] active:scale-95 transition-all text-[#607567] dark:text-[#8FAF9B] flex items-center justify-center shadow-premium-lg border border-[#ECECEC] dark:border-[#2C322E]"
+          className="w-12 h-12 rounded-full bg-white dark:bg-[#1E221E] hover:bg-[#F7F9F7] dark:hover:bg-[#2C322E] active:scale-95 transition-all text-[#607567] dark:text-[#8FAF9B] flex items-center justify-center shadow-premium border border-[#ECECEC] dark:border-[#2C322E]"
           title="Toggle Theme"
         >
           {theme === 'dark' ? (
-            <Sun className="w-6 h-6 text-amber-400 fill-amber-400" />
+            <Sun className="w-5.5 h-5.5 text-amber-400 fill-amber-400" />
           ) : (
-            <Moon className="w-6 h-6 text-[#607567]" />
+            <Moon className="w-5.5 h-5.5 text-[#607567]" />
           )}
         </button>
-      </div>
 
-      <div className="fixed bottom-20 right-6 z-30">
         <button
           onClick={() => setTxWizardOpen(true)}
           className="w-14 h-14 rounded-full bg-[#8FAF9B] hover:bg-[#607567] active:scale-95 transition-all text-white flex items-center justify-center shadow-premium-lg border border-[#AFC5B3]"
