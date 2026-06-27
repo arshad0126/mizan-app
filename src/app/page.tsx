@@ -23,7 +23,9 @@ import {
   Calendar,
   Layers,
   Sparkle,
-  Smile
+  Smile,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 // Components
@@ -44,7 +46,9 @@ export default function Dashboard() {
     goals,
     accounts,
     privacyMode,
-    contributeToGoal
+    contributeToGoal,
+    theme,
+    toggleTheme
   } = useMizanStore();
 
   const [txWizardOpen, setTxWizardOpen] = useState(false);
@@ -59,7 +63,7 @@ export default function Dashboard() {
   // Expandable transaction states in Timeline
   const [expandedTxId, setExpandedTxId] = useState<string | null>(null);
 
-  // Subscriptions mock list (Subscription Center)
+  // Subscriptions mock list
   const subscriptions = [
     { name: 'iCloud Storage', cost: 75, icon: '☁️', renewal: '02 July' },
     { name: 'ChatGPT Plus', cost: 1999, icon: '🤖', renewal: '10 July' },
@@ -74,15 +78,15 @@ export default function Dashboard() {
     const wantCats = ['Shopping', 'Coffee', 'Restaurants', 'Entertainment', 'Travel', 'Luxury'];
     const islamicCats = ['Sadaqah', 'Zakat', 'Qurbani', 'Masjid', 'Community'];
     
-    if (needCats.includes(cat)) return 'bg-amber-100 text-amber-800 border-amber-200';
-    if (wantCats.includes(cat)) return 'bg-blue-100 text-blue-800 border-blue-200';
-    if (islamicCats.includes(cat)) return 'bg-[#8FAF9B]/20 text-[#607567] border-[#8FAF9B]/30';
-    if (cat === 'Parents') return 'bg-rose-100 text-rose-800 border-rose-200';
-    return 'bg-gray-100 text-gray-800 border-gray-200';
+    if (needCats.includes(cat)) return 'bg-amber-100 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900/40';
+    if (wantCats.includes(cat)) return 'bg-blue-100 dark:bg-blue-950/30 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-900/40';
+    if (islamicCats.includes(cat)) return 'bg-[#8FAF9B]/20 text-[#607567] dark:text-[#8FAF9B] border-[#8FAF9B]/30';
+    if (cat === 'Parents') return 'bg-rose-100 dark:bg-rose-950/30 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-900/40';
+    return 'bg-gray-100 dark:bg-gray-800/45 text-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-700/50';
   };
 
   return (
-    <div className="w-full min-h-screen flex flex-col pb-24">
+    <div className="w-full min-h-screen flex flex-col pb-24 bg-[#F7F9F7] dark:bg-[#121412] text-[#1E1E1E] dark:text-[#F7F9F7] transition-colors duration-300">
       {/* Universal Header */}
       <Header />
 
@@ -104,7 +108,7 @@ export default function Dashboard() {
               <div className="grid grid-cols-2 gap-4">
                 <button
                   onClick={() => setTxWizardOpen(true)}
-                  className="py-3 rounded-2xl bg-white border border-[#ECECEC] text-[#1E1E1E] text-xs font-bold shadow-sm active:scale-95 transition-all flex items-center justify-center space-x-2"
+                  className="py-3 rounded-2xl bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] text-[#1E1E1E] dark:text-[#F7F9F7] text-xs font-bold shadow-sm active:scale-95 transition-all flex items-center justify-center space-x-2"
                 >
                   <Plus className="w-4 h-4 text-[#8FAF9B]" />
                   <span>Add Transaction</span>
@@ -123,7 +127,7 @@ export default function Dashboard() {
               {/* Recent Activity summary */}
               <div className="flex flex-col space-y-3">
                 <div className="flex justify-between items-center px-1">
-                  <h3 className="text-sm font-bold text-[#607567] tracking-wider uppercase">TODAY'S ACTIVITY</h3>
+                  <h3 className="text-sm font-bold text-[#607567] dark:text-[#8FAF9B] tracking-wider uppercase">TODAY'S ACTIVITY</h3>
                   <button 
                     onClick={() => setActiveTab('timeline')}
                     className="text-xxs text-[#8FAF9B] font-bold flex items-center space-x-0.5"
@@ -133,51 +137,57 @@ export default function Dashboard() {
                   </button>
                 </div>
 
-                {transactions.slice(0, 3).map((tx) => (
-                  <div
-                    key={tx.id}
-                    className="bg-white border border-[#ECECEC] rounded-2xl p-4 flex justify-between items-center shadow-sm hover:border-[#8FAF9B] transition-colors"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                        tx.type === 'income' ? 'bg-[#63A66F]/10 text-[#63A66F]' : 'bg-[#ECECEC] text-[#1E1E1E]'
-                      }`}>
-                        {tx.type === 'income' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs font-bold text-[#1E1E1E] line-clamp-1">{tx.notes}</span>
-                        <div className="flex items-center space-x-1.5 mt-0.5">
-                          <span className={`text-xxs px-1.5 py-0.5 rounded border ${getCategoryColor(tx.category)}`}>
-                            {tx.category}
-                          </span>
-                          {tx.journal?.isMemory && (
-                            <span className="text-xxs font-bold text-[#8FAF9B] flex items-center">
-                              <Smile className="w-2.5 h-2.5 mr-0.5 fill-current" />
-                              <span>Memory</span>
+                {transactions.length === 0 ? (
+                  <div className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-3xl p-6 text-center text-xs italic text-[#757575] dark:text-[#9AA09C]">
+                    No transactions recorded yet. Click '+' to add one.
+                  </div>
+                ) : (
+                  transactions.slice(0, 3).map((tx) => (
+                    <div
+                      key={tx.id}
+                      className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-2xl p-4 flex justify-between items-center shadow-sm hover:border-[#8FAF9B] transition-colors"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                          tx.type === 'income' ? 'bg-[#63A66F]/10 text-[#63A66F]' : 'bg-[#ECECEC] dark:bg-[#2C322E] text-[#1E1E1E] dark:text-[#F7F9F7]'
+                        }`}>
+                          {tx.type === 'income' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-bold text-[#1E1E1E] dark:text-[#F7F9F7] line-clamp-1">{tx.notes}</span>
+                          <div className="flex items-center space-x-1.5 mt-0.5">
+                            <span className={`text-xxs px-1.5 py-0.5 rounded border ${getCategoryColor(tx.category)}`}>
+                              {tx.category}
                             </span>
-                          )}
+                            {tx.journal?.isMemory && (
+                              <span className="text-xxs font-bold text-[#8FAF9B] flex items-center">
+                                <Smile className="w-2.5 h-2.5 mr-0.5 fill-current" />
+                                <span>Memory</span>
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
+                      <span className={`text-xs font-black ${
+                        tx.type === 'income' ? 'text-[#63A66F]' : 'text-[#1E1E1E] dark:text-[#F7F9F7]'
+                      }`}>
+                        {tx.type === 'income' ? '+' : '-'}{formatAmount(tx.amount, privacyMode)}
+                      </span>
                     </div>
-                    <span className={`text-xs font-black ${
-                      tx.type === 'income' ? 'text-[#63A66F]' : 'text-[#1E1E1E]'
-                    }`}>
-                      {tx.type === 'income' ? '+' : '-'}{formatAmount(tx.amount, privacyMode)}
-                    </span>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
               {/* Subscriptions Card */}
-              <div className="bg-white border border-[#ECECEC] rounded-3xl p-5 shadow-sm flex flex-col space-y-4">
-                <div className="flex justify-between items-center border-b border-[#ECECEC] pb-3">
+              <div className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-3xl p-5 shadow-sm flex flex-col space-y-4">
+                <div className="flex justify-between items-center border-b border-[#ECECEC] dark:border-[#2C322E] pb-3">
                   <div className="flex flex-col">
-                    <span className="text-xxs text-[#757575] font-bold tracking-wider uppercase">SUBSCRIPTIONS</span>
-                    <span className="text-xs text-[#1E1E1E] font-bold mt-0.5">
+                    <span className="text-xxs text-[#757575] dark:text-[#9AA09C] font-bold tracking-wider uppercase">SUBSCRIPTIONS</span>
+                    <span className="text-xs text-[#1E1E1E] dark:text-[#F7F9F7] font-bold mt-0.5">
                       Monthly Cost: {formatAmount(totalSubMonthly, privacyMode)}
                     </span>
                   </div>
-                  <span className="text-xxs text-[#757575] font-bold px-2 py-1 bg-[#F7F9F7] rounded-lg">
+                  <span className="text-xxs text-[#757575] dark:text-[#9AA09C] font-bold px-2 py-1 bg-[#F7F9F7] dark:bg-[#2C322E] rounded-lg">
                     Yearly: {formatAmount(totalSubMonthly * 12, privacyMode)}
                   </span>
                 </div>
@@ -187,11 +197,11 @@ export default function Dashboard() {
                     <div key={i} className="flex justify-between items-center text-xs font-semibold">
                       <div className="flex items-center space-x-2">
                         <span className="text-sm">{sub.icon}</span>
-                        <span className="text-[#1E1E1E]">{sub.name}</span>
+                        <span className="text-[#1E1E1E] dark:text-[#F7F9F7]">{sub.name}</span>
                       </div>
                       <div className="flex flex-col items-end">
-                        <span className="text-[#1E1E1E]">{formatAmount(sub.cost, privacyMode)}</span>
-                        <span className="text-xxs text-[#757575] font-medium">{sub.renewal}</span>
+                        <span className="text-[#1E1E1E] dark:text-[#F7F9F7]">{formatAmount(sub.cost, privacyMode)}</span>
+                        <span className="text-xxs text-[#757575] dark:text-[#9AA09C] font-medium">{sub.renewal}</span>
                       </div>
                     </div>
                   ))}
@@ -210,14 +220,14 @@ export default function Dashboard() {
               className="flex flex-col space-y-5"
             >
               <div className="flex flex-col px-1">
-                <span className="text-xxs text-[#757575] font-bold tracking-widest uppercase">CHRONOLOGICAL STORY</span>
-                <h2 className="text-lg font-bold text-[#1E1E1E] mt-0.5">Financial journal</h2>
+                <span className="text-xxs text-[#757575] dark:text-[#9AA09C] font-bold tracking-widest uppercase">CHRONOLOGICAL STORY</span>
+                <h2 className="text-lg font-bold text-[#1E1E1E] dark:text-[#F7F9F7] mt-0.5">Financial journal</h2>
               </div>
 
               {transactions.length === 0 ? (
-                <p className="text-center italic text-xs text-[#757575] py-8 bg-white border border-[#ECECEC] rounded-3xl">No transactions found. Add some transactions to begin your timeline story.</p>
+                <p className="text-center italic text-xs text-[#757575] dark:text-[#9AA09C] py-8 bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-3xl">No transactions found. Add some transactions to begin your timeline story.</p>
               ) : (
-                <div className="relative border-l border-[#ECECEC] pl-5 ml-3.5 space-y-6">
+                <div className="relative border-l border-[#ECECEC] dark:border-[#2C322E] pl-5 ml-3.5 space-y-6">
                   {transactions.map((tx) => {
                     const isExpanded = expandedTxId === tx.id;
                     const isSadaqah = tx.type === 'sadaqah';
@@ -229,30 +239,30 @@ export default function Dashboard() {
                         className="relative"
                       >
                         {/* Timeline dot */}
-                        <div className={`absolute -left-[27px] top-1.5 w-3.5 h-3.5 rounded-full border-2 border-white transition-all shadow-sm ${
+                        <div className={`absolute -left-[27px] top-1.5 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-[#121412] transition-all shadow-sm ${
                           isSadaqah ? 'bg-[#8FAF9B]' : tx.type === 'income' ? 'bg-[#63A66F]' : 'bg-[#757575]'
                         }`} />
 
                         <div 
                           onClick={() => setExpandedTxId(isExpanded ? null : tx.id)}
-                          className={`bg-white border rounded-2xl p-4 flex flex-col cursor-pointer hover:border-[#8FAF9B] transition-all shadow-sm ${
-                            isSadaqah ? 'border-[#8FAF9B]/40 bg-[#8FAF9B]/2' : 'border-[#ECECEC]'
+                          className={`bg-white dark:bg-[#1E221E] border rounded-2xl p-4 flex flex-col cursor-pointer hover:border-[#8FAF9B] transition-all shadow-sm ${
+                            isSadaqah ? 'border-[#8FAF9B]/40 bg-[#8FAF9B]/2' : 'border-[#ECECEC] dark:border-[#2C322E]'
                           }`}
                         >
                           <div className="flex justify-between items-start">
                             <div className="flex flex-col">
-                              <span className="text-xs font-bold text-[#1E1E1E] leading-tight">
+                              <span className="text-xs font-bold text-[#1E1E1E] dark:text-[#F7F9F7] leading-tight">
                                 {tx.notes}
                               </span>
                               <div className="flex items-center space-x-1.5 mt-1">
                                 <span className={`text-xxs px-1.5 py-0.5 rounded border font-semibold ${getCategoryColor(tx.category)}`}>
                                   {tx.category}
                                 </span>
-                                <span className="text-xxs text-[#757575]">{tx.date}</span>
+                                <span className="text-xxs text-[#757575] dark:text-[#9AA09C]">{tx.date}</span>
                               </div>
                             </div>
                             <span className={`text-xs font-black ${
-                              tx.type === 'income' ? 'text-[#63A66F]' : 'text-[#1E1E1E]'
+                              tx.type === 'income' ? 'text-[#63A66F]' : 'text-[#1E1E1E] dark:text-[#F7F9F7]'
                             }`}>
                               {tx.type === 'income' ? '+' : '-'}{formatAmount(tx.amount, privacyMode)}
                             </span>
@@ -265,33 +275,33 @@ export default function Dashboard() {
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: 'auto' }}
                                 exit={{ opacity: 0, height: 0 }}
-                                className="border-t border-[#ECECEC] mt-3 pt-3 flex flex-col space-y-3"
+                                className="border-t border-[#ECECEC] dark:border-[#2C322E] mt-3 pt-3 flex flex-col space-y-3"
                               >
                                 {tx.journal ? (
-                                  <div className="bg-[#F7F9F7] rounded-xl p-3 flex flex-col space-y-2 border border-[#ECECEC]">
+                                  <div className="bg-[#F7F9F7] dark:bg-[#2C322E]/30 rounded-xl p-3 flex flex-col space-y-2 border border-[#ECECEC] dark:border-[#2C322E]">
                                     <div className="flex items-center justify-between">
-                                      <span className="text-xxs font-bold text-[#607567] flex items-center space-x-1">
+                                      <span className="text-xxs font-bold text-[#607567] dark:text-[#8FAF9B] flex items-center space-x-1">
                                         <Heart className="w-3 h-3 text-[#8FAF9B] fill-current" />
                                         <span>Journal Memory</span>
                                       </span>
                                     </div>
-                                    <p className="text-xs italic text-[#1E1E1E] font-medium leading-relaxed">
+                                    <p className="text-xs italic text-[#1E1E1E] dark:text-[#F7F9F7] font-medium leading-relaxed">
                                       "{tx.journal.notes}"
                                     </p>
                                     {tx.journal.voiceUrl && (
-                                      <div className="flex items-center space-x-2 text-xxs text-[#757575] border-t border-[#ECECEC] pt-2">
+                                      <div className="flex items-center space-x-2 text-xxs text-[#757575] dark:text-[#9AA09C] border-t border-[#ECECEC] dark:border-[#2C322E] pt-2">
                                         <span className="w-1.5 h-1.5 bg-[#8FAF9B] rounded-full animate-ping" />
                                         <span>Attached Voice Memo Note (0:14)</span>
                                       </div>
                                     )}
                                     {tx.journal.photoUrl && (
-                                      <div className="text-xxs text-[#757575] flex items-center space-x-1">
+                                      <div className="text-xxs text-[#757575] dark:text-[#9AA09C] flex items-center space-x-1">
                                         <span>📎 Attached Receipt scan</span>
                                       </div>
                                     )}
                                   </div>
                                 ) : (
-                                  <p className="text-xxs text-[#757575] italic">No journal entries written. Tap to add journal notes next time.</p>
+                                  <p className="text-xxs text-[#757575] dark:text-[#9AA09C] italic">No journal entries written. Tap to add journal notes next time.</p>
                                 )}
                               </motion.div>
                             )}
@@ -315,30 +325,30 @@ export default function Dashboard() {
               className="flex flex-col space-y-5"
             >
               <div className="flex flex-col px-1">
-                <span className="text-xxs text-[#757575] font-bold tracking-widest uppercase">ZERO-BASED ENVELOPES</span>
-                <h2 className="text-lg font-bold text-[#1E1E1E] mt-0.5">Budget allocations</h2>
+                <span className="text-xxs text-[#757575] dark:text-[#9AA09C] font-bold tracking-widest uppercase">ZERO-BASED ENVELOPES</span>
+                <h2 className="text-lg font-bold text-[#1E1E1E] dark:text-[#F7F9F7] mt-0.5">Budget allocations</h2>
               </div>
 
-              <div className="bg-white border border-[#ECECEC] rounded-3xl p-5 shadow-sm flex flex-col space-y-4">
+              <div className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-3xl p-5 shadow-sm flex flex-col space-y-4">
                 {budgets.map((b) => {
                   const percent = b.allocated > 0 ? (b.spent / b.allocated) * 100 : 0;
                   const isOver = b.spent > b.allocated;
                   
                   return (
-                    <div key={b.category} className="flex flex-col space-y-2 border-b border-[#ECECEC] last:border-none pb-4 last:pb-0">
-                      <div className="flex justify-between items-center text-xs font-bold text-[#1E1E1E]">
+                    <div key={b.category} className="flex flex-col space-y-2 border-b border-[#ECECEC] dark:border-[#2C322E] last:border-none pb-4 last:pb-0">
+                      <div className="flex justify-between items-center text-xs font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">
                         <span>{b.category}</span>
                         <div className="flex items-center space-x-1.5">
-                          <span className="text-[#757575]">Spent:</span>
-                          <span className={isOver ? 'text-[#D66C6C]' : 'text-[#607567]'}>
+                          <span className="text-[#757575] dark:text-[#9AA09C]">Spent:</span>
+                          <span className={isOver ? 'text-[#D66C6C]' : 'text-[#607567] dark:text-[#8FAF9B]'}>
                             {formatAmount(b.spent, privacyMode)}
                           </span>
-                          <span className="text-[#757575] font-medium">/ {formatAmount(b.allocated, privacyMode)}</span>
+                          <span className="text-[#757575] dark:text-[#9AA09C] font-medium">/ {formatAmount(b.allocated, privacyMode)}</span>
                         </div>
                       </div>
 
                       {/* Progression bar */}
-                      <div className="w-full h-2 bg-[#F7F9F7] rounded-full overflow-hidden border border-[#ECECEC]">
+                      <div className="w-full h-2 bg-[#F7F9F7] dark:bg-[#121412] rounded-full overflow-hidden border border-[#ECECEC] dark:border-[#2C322E]">
                         <div 
                           className={`h-full rounded-full transition-all duration-300 ${
                             isOver ? 'bg-[#D66C6C]' : 'bg-[#8FAF9B]'
@@ -352,7 +362,7 @@ export default function Dashboard() {
               </div>
 
               {/* Info alert */}
-              <div className="p-4 bg-[#607567]/5 rounded-2xl border border-[#ECECEC] flex items-center space-x-3 text-xxs text-[#757575]">
+              <div className="p-4 bg-[#607567]/5 dark:bg-[#8FAF9B]/5 rounded-2xl border border-[#ECECEC] dark:border-[#2C322E] flex items-center space-x-3 text-xxs text-[#757575] dark:text-[#9AA09C]">
                 <span>💡 Adjust allocations at any time by triggering the Payday wizard to re-balance envelopes.</span>
               </div>
             </motion.div>
@@ -368,8 +378,8 @@ export default function Dashboard() {
               className="flex flex-col space-y-5"
             >
               <div className="flex flex-col px-1">
-                <span className="text-xxs text-[#757575] font-bold tracking-widest uppercase">INTENTIONAL PORTFOLIOS</span>
-                <h2 className="text-lg font-bold text-[#1E1E1E] mt-0.5">Active goals</h2>
+                <span className="text-xxs text-[#757575] dark:text-[#9AA09C] font-bold tracking-widest uppercase">INTENTIONAL PORTFOLIOS</span>
+                <h2 className="text-lg font-bold text-[#1E1E1E] dark:text-[#F7F9F7] mt-0.5">Active goals</h2>
               </div>
 
               {goals.map((goal) => {
@@ -377,16 +387,16 @@ export default function Dashboard() {
                 const remaining = Math.max(0, goal.target - goal.saved);
                 
                 return (
-                  <div key={goal.id} className="bg-white border border-[#ECECEC] rounded-3xl p-5 shadow-sm flex flex-col space-y-4">
+                  <div key={goal.id} className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-3xl p-5 shadow-sm flex flex-col space-y-4">
                     <div className="flex justify-between items-start">
                       <div className="flex flex-col">
-                        <h3 className="text-sm font-bold text-[#1E1E1E]">{goal.title}</h3>
-                        <span className="text-xxs text-[#757575] font-medium mt-0.5">Target: {goal.timeline}</span>
+                        <h3 className="text-sm font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">{goal.title}</h3>
+                        <span className="text-xxs text-[#757575] dark:text-[#9AA09C] font-medium mt-0.5">Target: {goal.timeline}</span>
                       </div>
                       <span className="text-xs font-black text-[#8FAF9B]">{Math.round(percent)}%</span>
                     </div>
 
-                    <div className="w-full h-2 bg-[#F7F9F7] rounded-full overflow-hidden border border-[#ECECEC]">
+                    <div className="w-full h-2 bg-[#F7F9F7] dark:bg-[#121412] rounded-full overflow-hidden border border-[#ECECEC] dark:border-[#2C322E]">
                       <div 
                         className="h-full bg-[#8FAF9B] rounded-full transition-all duration-300"
                         style={{ width: `${percent}%` }}
@@ -395,13 +405,13 @@ export default function Dashboard() {
 
                     <div className="flex justify-between items-center text-xs">
                       <div className="flex flex-col">
-                        <span className="text-xxs text-[#757575]">Saved</span>
-                        <span className="font-bold text-[#1E1E1E]">{formatAmount(goal.saved, privacyMode)}</span>
+                        <span className="text-xxs text-[#757575] dark:text-[#9AA09C]">Saved</span>
+                        <span className="font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">{formatAmount(goal.saved, privacyMode)}</span>
                       </div>
                       
                       <div className="flex flex-col items-end">
-                        <span className="text-xxs text-[#757575]">Remaining</span>
-                        <span className="font-bold text-[#1E1E1E]">{formatAmount(remaining, privacyMode)}</span>
+                        <span className="text-xxs text-[#757575] dark:text-[#9AA09C]">Remaining</span>
+                        <span className="font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">{formatAmount(remaining, privacyMode)}</span>
                       </div>
                     </div>
 
@@ -410,7 +420,7 @@ export default function Dashboard() {
                         setSelectedGoalId(goal.id);
                         setGoalContributionOpen(true);
                       }}
-                      className="w-full py-2.5 rounded-xl border border-[#ECECEC] text-[#607567] text-xs font-bold bg-[#F7F9F7] active:scale-97 hover:bg-white hover:border-[#8FAF9B] transition-all"
+                      className="w-full py-2.5 rounded-xl border border-[#ECECEC] dark:border-[#2C322E] text-[#607567] dark:text-[#8FAF9B] text-xs font-bold bg-[#F7F9F7] dark:bg-[#121412] active:scale-97 hover:bg-white dark:hover:bg-[#1E221E] hover:border-[#8FAF9B] transition-all"
                     >
                       Allocate Contribution
                     </button>
@@ -430,28 +440,28 @@ export default function Dashboard() {
                       initial={{ y: '100%' }}
                       animate={{ y: 0 }}
                       exit={{ y: '100%' }}
-                      className="fixed bottom-0 left-0 right-0 bg-[#F7F9F7] rounded-t-[32px] shadow-premium-lg z-50 p-6 safe-bottom"
+                      className="fixed bottom-0 left-0 right-0 bg-[#F7F9F7] dark:bg-[#1E221E] rounded-t-[32px] shadow-premium-lg z-50 p-6 safe-bottom"
                     >
-                      <h3 className="text-sm font-bold text-[#1E1E1E] mb-4">Contribute to Goal</h3>
+                      <h3 className="text-sm font-bold text-[#1E1E1E] dark:text-[#F7F9F7] mb-4">Contribute to Goal</h3>
                       
                       <div className="flex flex-col space-y-4">
-                        <div className="flex flex-col bg-white border border-[#ECECEC] rounded-xl p-3 shadow-sm">
-                          <label className="text-xxs text-[#757575] font-bold mb-1">AMOUNT</label>
+                        <div className="flex flex-col bg-white dark:bg-[#2C322E]/30 border border-[#ECECEC] dark:border-[#2C322E] rounded-xl p-3 shadow-sm">
+                          <label className="text-xxs text-[#757575] dark:text-[#9AA09C] font-bold mb-1">AMOUNT</label>
                           <input
                             type="number"
                             placeholder="Enter amount"
                             value={contributionAmount}
                             onChange={(e) => setContributionAmount(e.target.value)}
-                            className="bg-transparent outline-none font-bold text-[#1E1E1E]"
+                            className="bg-transparent outline-none font-bold text-[#1E1E1E] dark:text-[#F7F9F7]"
                           />
                         </div>
 
-                        <div className="flex flex-col bg-white border border-[#ECECEC] rounded-xl p-3 shadow-sm">
-                          <label className="text-xxs text-[#757575] font-bold mb-1">SOURCE ACCOUNT</label>
+                        <div className="flex flex-col bg-white dark:bg-[#2C322E]/30 border border-[#ECECEC] dark:border-[#2C322E] rounded-xl p-3 shadow-sm">
+                          <label className="text-xxs text-[#757575] dark:text-[#9AA09C] font-bold mb-1">SOURCE ACCOUNT</label>
                           <select
                             value={contributionSourceAcc}
                             onChange={(e) => setContributionSourceAcc(e.target.value)}
-                            className="bg-transparent outline-none text-xs font-semibold text-[#1E1E1E]"
+                            className="bg-transparent outline-none text-xs font-semibold text-[#1E1E1E] dark:text-[#F7F9F7]"
                           >
                             <option value="">Select Account</option>
                             {accounts.map(acc => (
@@ -468,7 +478,6 @@ export default function Dashboard() {
                             await contributeToGoal(selectedGoalId, Number(contributionAmount), contributionSourceAcc);
                             setGoalContributionOpen(false);
                             setContributionAmount('');
-                            // success celebration
                             confetti({
                               particleCount: 60,
                               spread: 50,
@@ -510,22 +519,22 @@ export default function Dashboard() {
             >
               <FinancialHealthScore />
 
-              <div className="bg-white border border-[#ECECEC] rounded-3xl p-5 shadow-sm flex flex-col space-y-4">
-                <span className="text-xs font-bold text-[#607567] tracking-wider uppercase border-b border-[#ECECEC] pb-2">SETTINGS</span>
+              <div className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-3xl p-5 shadow-sm flex flex-col space-y-4">
+                <span className="text-xs font-bold text-[#607567] dark:text-[#8FAF9B] tracking-wider uppercase border-b border-[#ECECEC] dark:border-[#2C322E] pb-2">SETTINGS</span>
                 
                 <div className="flex justify-between items-center text-xs font-semibold">
-                  <span className="text-[#1E1E1E]">Biometric Face ID Lock</span>
+                  <span className="text-[#1E1E1E] dark:text-[#F7F9F7]">Biometric Face ID Lock</span>
                   <span className="text-xs text-[#8FAF9B]">Configured</span>
                 </div>
                 
                 <div className="flex justify-between items-center text-xs font-semibold">
-                  <span className="text-[#1E1E1E]">Offline Cache sync</span>
+                  <span className="text-[#1E1E1E] dark:text-[#F7F9F7]">Offline Cache sync</span>
                   <span className="text-xs text-[#63A66F] font-bold">Synchronized</span>
                 </div>
 
                 <div className="flex justify-between items-center text-xs font-semibold">
-                  <span className="text-[#1E1E1E]">Storage engine</span>
-                  <span className="text-[#757575]">IndexedDB Local</span>
+                  <span className="text-[#1E1E1E] dark:text-[#F7F9F7]">Storage engine</span>
+                  <span className="text-[#757575] dark:text-[#9AA09C]">IndexedDB Local</span>
                 </div>
               </div>
             </motion.div>
@@ -533,7 +542,21 @@ export default function Dashboard() {
         </AnimatePresence>
       </main>
 
-      {/* Floating Action Button for entry */}
+      {/* Floating Action Buttons */}
+      <div className="fixed bottom-36 right-6 z-30">
+        <button
+          onClick={toggleTheme}
+          className="w-14 h-14 rounded-full bg-white dark:bg-[#1E221E] hover:bg-[#F7F9F7] dark:hover:bg-[#2C322E] active:scale-95 transition-all text-[#607567] dark:text-[#8FAF9B] flex items-center justify-center shadow-premium-lg border border-[#ECECEC] dark:border-[#2C322E]"
+          title="Toggle Theme"
+        >
+          {theme === 'dark' ? (
+            <Sun className="w-6 h-6 text-amber-400 fill-amber-400" />
+          ) : (
+            <Moon className="w-6 h-6 text-[#607567]" />
+          )}
+        </button>
+      </div>
+
       <div className="fixed bottom-20 right-6 z-30">
         <button
           onClick={() => setTxWizardOpen(true)}
@@ -545,11 +568,11 @@ export default function Dashboard() {
       </div>
 
       {/* Universal Floating Tab Bar Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-[#ECECEC] py-3 px-6 z-30 flex justify-between items-center safe-bottom shadow-lg">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white/85 dark:bg-[#1E221Ed9] backdrop-blur-xl border-t border-[#ECECEC] dark:border-[#2C322E] py-3 px-6 z-30 flex justify-between items-center safe-bottom shadow-lg">
         <button
           onClick={() => setActiveTab('home')}
           className={`flex flex-col items-center space-y-1 ${
-            activeTab === 'home' ? 'text-[#8FAF9B]' : 'text-[#757575] hover:text-[#1E1E1E]'
+            activeTab === 'home' ? 'text-[#8FAF9B]' : 'text-[#757575] dark:text-[#9AA09C] hover:text-[#1E1E1E] dark:hover:text-[#F7F9F7]'
           }`}
         >
           <HomeIcon className="w-5 h-5" />
@@ -559,7 +582,7 @@ export default function Dashboard() {
         <button
           onClick={() => setActiveTab('timeline')}
           className={`flex flex-col items-center space-y-1 ${
-            activeTab === 'timeline' ? 'text-[#8FAF9B]' : 'text-[#757575] hover:text-[#1E1E1E]'
+            activeTab === 'timeline' ? 'text-[#8FAF9B]' : 'text-[#757575] dark:text-[#9AA09C] hover:text-[#1E1E1E] dark:hover:text-[#F7F9F7]'
           }`}
         >
           <Clock className="w-5 h-5" />
@@ -569,7 +592,7 @@ export default function Dashboard() {
         <button
           onClick={() => setActiveTab('budget')}
           className={`flex flex-col items-center space-y-1 ${
-            activeTab === 'budget' ? 'text-[#8FAF9B]' : 'text-[#757575] hover:text-[#1E1E1E]'
+            activeTab === 'budget' ? 'text-[#8FAF9B]' : 'text-[#757575] dark:text-[#9AA09C] hover:text-[#1E1E1E] dark:hover:text-[#F7F9F7]'
           }`}
         >
           <PieChart className="w-5 h-5" />
@@ -579,7 +602,7 @@ export default function Dashboard() {
         <button
           onClick={() => setActiveTab('goals')}
           className={`flex flex-col items-center space-y-1 ${
-            activeTab === 'goals' ? 'text-[#8FAF9B]' : 'text-[#757575] hover:text-[#1E1E1E]'
+            activeTab === 'goals' ? 'text-[#8FAF9B]' : 'text-[#757575] dark:text-[#9AA09C] hover:text-[#1E1E1E] dark:hover:text-[#F7F9F7]'
           }`}
         >
           <Target className="w-5 h-5" />
@@ -589,7 +612,7 @@ export default function Dashboard() {
         <button
           onClick={() => setActiveTab('islamic')}
           className={`flex flex-col items-center space-y-1 ${
-            activeTab === 'islamic' ? 'text-[#8FAF9B]' : 'text-[#757575] hover:text-[#1E1E1E]'
+            activeTab === 'islamic' ? 'text-[#8FAF9B]' : 'text-[#757575] dark:text-[#9AA09C] hover:text-[#1E1E1E] dark:hover:text-[#F7F9F7]'
           }`}
         >
           <BookOpen className="w-5 h-5" />
@@ -599,7 +622,7 @@ export default function Dashboard() {
         <button
           onClick={() => setActiveTab('profile')}
           className={`flex flex-col items-center space-y-1 ${
-            activeTab === 'profile' ? 'text-[#8FAF9B]' : 'text-[#757575] hover:text-[#1E1E1E]'
+            activeTab === 'profile' ? 'text-[#8FAF9B]' : 'text-[#757575] dark:text-[#9AA09C] hover:text-[#1E1E1E] dark:hover:text-[#F7F9F7]'
           }`}
         >
           <Layers className="w-5 h-5" />

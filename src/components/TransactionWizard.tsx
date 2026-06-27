@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useMizanStore } from '@/store/useMizanStore';
-import { X, Mic, Camera, Check, Heart, Plus, ArrowDownLeft, ArrowUpRight, HeartHandshake } from 'lucide-react';
+import { X, Mic, Camera, Check, Heart, ArrowDownLeft, ArrowUpRight, HeartHandshake } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface TransactionWizardProps {
@@ -88,7 +88,6 @@ export default function TransactionWizard({ isOpen, onClose }: TransactionWizard
 
     await addTransaction(txPayload);
 
-    // Celebrate Sadaqah entry with heart-themed confetti!
     if (type === 'sadaqah') {
       confetti({
         particleCount: 80,
@@ -98,7 +97,6 @@ export default function TransactionWizard({ isOpen, onClose }: TransactionWizard
       });
     }
 
-    // Reset Form
     setAmount('');
     setCategory('');
     setNotes('');
@@ -125,16 +123,16 @@ export default function TransactionWizard({ isOpen, onClose }: TransactionWizard
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-        className="fixed bottom-0 left-0 right-0 max-h-[92vh] overflow-y-auto bg-[#F7F9F7] rounded-t-[32px] shadow-premium-lg z-50 px-6 pt-5 pb-8 safe-bottom"
+        className="fixed bottom-0 left-0 right-0 max-h-[92vh] overflow-y-auto bg-[#F7F9F7] dark:bg-[#121412] text-[#1E1E1E] dark:text-[#F7F9F7] rounded-t-[32px] shadow-premium-lg z-50 px-6 pt-5 pb-8 safe-bottom"
       >
         {/* Notch Handler */}
-        <div className="w-12 h-1.5 bg-[#ECECEC] rounded-full mx-auto mb-5 cursor-pointer" onClick={onClose} />
+        <div className="w-12 h-1.5 bg-[#ECECEC] dark:bg-[#2C322E] rounded-full mx-auto mb-5 cursor-pointer" onClick={onClose} />
 
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-bold text-[#1E1E1E]">New Transaction</h2>
+          <h2 className="text-lg font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">New Transaction</h2>
           <button 
             onClick={onClose}
-            className="p-2 rounded-full border border-[#ECECEC] bg-white text-[#757575] active:scale-95 transition-all shadow-sm"
+            className="p-2 rounded-full border border-[#ECECEC] dark:border-[#2C322E] bg-white dark:bg-[#1E221E] text-[#757575] dark:text-[#9AA09C] active:scale-95 transition-all shadow-sm"
           >
             <X className="w-4 h-4" />
           </button>
@@ -142,14 +140,14 @@ export default function TransactionWizard({ isOpen, onClose }: TransactionWizard
 
         <form onSubmit={handleSave} className="flex flex-col space-y-5">
           {/* Type Toggles */}
-          <div className="grid grid-cols-3 gap-2 bg-[#ECECEC]/50 p-1 rounded-2xl">
+          <div className="grid grid-cols-3 gap-2 bg-[#ECECEC]/50 dark:bg-[#2C322E]/40 p-1 rounded-2xl">
             <button
               type="button"
               onClick={() => { setType('expense'); setCategory(''); }}
               className={`py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
                 type === 'expense'
-                  ? 'bg-white text-[#1E1E1E] shadow-sm'
-                  : 'text-[#757575] hover:text-[#1E1E1E]'
+                  ? 'bg-white dark:bg-[#1E221E] text-[#1E1E1E] dark:text-[#F7F9F7] shadow-sm'
+                  : 'text-[#757575] dark:text-[#9AA09C] hover:text-[#1E1E1E] dark:hover:text-[#F7F9F7]'
               }`}
             >
               <ArrowUpRight className="w-3.5 h-3.5 text-rose-500" />
@@ -161,8 +159,8 @@ export default function TransactionWizard({ isOpen, onClose }: TransactionWizard
               onClick={() => { setType('income'); setCategory(''); }}
               className={`py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
                 type === 'income'
-                  ? 'bg-white text-[#1E1E1E] shadow-sm'
-                  : 'text-[#757575] hover:text-[#1E1E1E]'
+                  ? 'bg-white dark:bg-[#1E221E] text-[#1E1E1E] dark:text-[#F7F9F7] shadow-sm'
+                  : 'text-[#757575] dark:text-[#9AA09C] hover:text-[#1E1E1E] dark:hover:text-[#F7F9F7]'
               }`}
             >
               <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-500" />
@@ -175,7 +173,7 @@ export default function TransactionWizard({ isOpen, onClose }: TransactionWizard
               className={`py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
                 type === 'sadaqah'
                   ? 'bg-[#8FAF9B] text-white shadow-sm'
-                  : 'text-[#757575] hover:text-[#1E1E1E]'
+                  : 'text-[#757575] dark:text-[#9AA09C] hover:text-[#1E1E1E] dark:hover:text-[#F7F9F7]'
               }`}
             >
               <HeartHandshake className="w-3.5 h-3.5" />
@@ -184,32 +182,31 @@ export default function TransactionWizard({ isOpen, onClose }: TransactionWizard
           </div>
 
           {/* Amount input */}
-          <div className="flex flex-col bg-white border border-[#ECECEC] rounded-2xl p-4 shadow-sm relative">
-            <label className="text-xxs font-bold text-[#757575] tracking-wider uppercase mb-1">AMOUNT</label>
+          <div className="flex flex-col bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-2xl p-4 shadow-sm relative">
+            <label className="text-xxs font-bold text-[#757575] dark:text-[#9AA09C] tracking-wider uppercase mb-1">AMOUNT</label>
             <div className="flex items-center">
-              <span className="text-2xl font-bold text-[#607567] mr-1.5">₹</span>
+              <span className="text-2xl font-bold text-[#607567] dark:text-[#8FAF9B] mr-1.5">₹</span>
               <input
                 type="number"
                 placeholder="0"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 required
-                className="w-full text-2xl font-black outline-none border-none text-[#1E1E1E]"
-                style={{ appearance: 'textfield' }}
+                className="w-full text-2xl font-black outline-none border-none text-[#1E1E1E] dark:text-[#F7F9F7] bg-transparent"
               />
             </div>
           </div>
 
           {/* Account Selector */}
-          <div className="flex flex-col bg-white border border-[#ECECEC] rounded-2xl p-4 shadow-sm">
-            <label className="text-xxs font-bold text-[#757575] tracking-wider uppercase mb-2">SOURCE ACCOUNT</label>
+          <div className="flex flex-col bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-2xl p-4 shadow-sm">
+            <label className="text-xxs font-bold text-[#757575] dark:text-[#9AA09C] tracking-wider uppercase mb-2">SOURCE ACCOUNT</label>
             <select
               value={accountId}
               onChange={(e) => setAccountId(e.target.value)}
-              className="w-full bg-transparent outline-none text-sm font-semibold text-[#1E1E1E]"
+              className="w-full bg-transparent outline-none text-sm font-semibold text-[#1E1E1E] dark:text-[#F7F9F7] border-none"
             >
               {accounts.map(acc => (
-                <option key={acc.id} value={acc.id}>
+                <option key={acc.id} value={acc.id} className="dark:bg-[#1E221E]">
                   {acc.name} (Balance: ₹{acc.balance.toLocaleString('en-IN')})
                 </option>
               ))}
@@ -218,7 +215,7 @@ export default function TransactionWizard({ isOpen, onClose }: TransactionWizard
 
           {/* Categories Selector */}
           <div className="flex flex-col">
-            <label className="text-xxs font-bold text-[#757575] tracking-wider uppercase mb-2 ml-1">CATEGORY</label>
+            <label className="text-xxs font-bold text-[#757575] dark:text-[#9AA09C] tracking-wider uppercase mb-2 ml-1">CATEGORY</label>
             <div className="grid grid-cols-3 gap-2">
               {categoriesMap[type].map((catOpt) => (
                 <button
@@ -227,8 +224,8 @@ export default function TransactionWizard({ isOpen, onClose }: TransactionWizard
                   onClick={() => setCategory(catOpt.name)}
                   className={`py-2 px-3 rounded-xl border text-xs font-semibold text-center transition-all ${
                     category === catOpt.name
-                      ? 'bg-[#8FAF9B]/10 border-[#8FAF9B] text-[#607567] scale-[1.03]'
-                      : 'bg-white border-[#ECECEC] text-[#1E1E1E] hover:border-[#8FAF9B]'
+                      ? 'bg-[#8FAF9B]/10 border-[#8FAF9B] text-[#607567] dark:text-[#8FAF9B] scale-[1.03]'
+                      : 'bg-white dark:bg-[#1E221E] border-[#ECECEC] dark:border-[#2C322E] text-[#1E1E1E] dark:text-[#F7F9F7] hover:border-[#8FAF9B]'
                   }`}
                 >
                   {catOpt.name}
@@ -239,39 +236,39 @@ export default function TransactionWizard({ isOpen, onClose }: TransactionWizard
 
           {/* Details */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col bg-white border border-[#ECECEC] rounded-2xl p-3.5 shadow-sm">
-              <label className="text-xxs font-bold text-[#757575] tracking-wider uppercase mb-1">DATE</label>
+            <div className="flex flex-col bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-2xl p-3.5 shadow-sm">
+              <label className="text-xxs font-bold text-[#757575] dark:text-[#9AA09C] tracking-wider uppercase mb-1">DATE</label>
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full bg-transparent outline-none text-xs font-semibold text-[#1E1E1E] border-none"
+                className="w-full bg-transparent outline-none text-xs font-semibold text-[#1E1E1E] dark:text-[#F7F9F7] border-none"
               />
             </div>
-            <div className="flex flex-col bg-white border border-[#ECECEC] rounded-2xl p-3.5 shadow-sm">
-              <label className="text-xxs font-bold text-[#757575] tracking-wider uppercase mb-1">NOTES</label>
+            <div className="flex flex-col bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-2xl p-3.5 shadow-sm">
+              <label className="text-xxs font-bold text-[#757575] dark:text-[#9AA09C] tracking-wider uppercase mb-1">NOTES</label>
               <input
                 type="text"
                 placeholder="Details..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full bg-transparent outline-none text-xs font-semibold text-[#1E1E1E] border-none"
+                className="w-full bg-transparent outline-none text-xs font-semibold text-[#1E1E1E] dark:text-[#F7F9F7] border-none"
               />
             </div>
           </div>
 
           {/* Journal Section */}
-          <div className="border border-[#ECECEC] rounded-2xl p-4 bg-white shadow-sm flex flex-col">
+          <div className="border border-[#ECECEC] dark:border-[#2C322E] rounded-2xl p-4 bg-white dark:bg-[#1E221E] shadow-sm flex flex-col">
             <div className="flex justify-between items-center">
               <div className="flex items-center space-x-2">
-                <Heart className={`w-4 h-4 ${isJournalMemory ? 'text-[#8FAF9B]' : 'text-[#757575]'}`} />
-                <span className="text-xs font-bold text-[#1E1E1E]">Save to Financial Journal</span>
+                <Heart className={`w-4 h-4 ${isJournalMemory ? 'text-[#8FAF9B]' : 'text-[#757575] dark:text-[#9AA09C]'}`} />
+                <span className="text-xs font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">Save to Financial Journal</span>
               </div>
               <input
                 type="checkbox"
                 checked={isJournalMemory}
                 onChange={(e) => setIsJournalMemory(e.target.checked)}
-                className="w-4 h-4 rounded text-[#8FAF9B] focus:ring-[#8FAF9B] border-[#ECECEC]"
+                className="w-4 h-4 rounded text-[#8FAF9B] focus:ring-[#8FAF9B] border-[#ECECEC] dark:border-[#2C322E] bg-transparent"
               />
             </div>
 
@@ -279,41 +276,39 @@ export default function TransactionWizard({ isOpen, onClose }: TransactionWizard
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
-                className="mt-4 pt-3 border-t border-[#ECECEC] flex flex-col space-y-3"
+                className="mt-4 pt-3 border-t border-[#ECECEC] dark:border-[#2C322E] flex flex-col space-y-3"
               >
                 <textarea
-                  placeholder="Record your thoughts or memories (e.g. 'Bought Ammi a phone. Her smile was priceless. Alhamdulillah.')"
+                  placeholder="Record thoughts..."
                   value={journalNotes}
                   onChange={(e) => setJournalNotes(e.target.value)}
-                  className="w-full p-3 bg-[#F7F9F7] rounded-xl text-xs font-medium border border-[#ECECEC] text-[#1E1E1E] focus:outline-none focus:border-[#8FAF9B]"
+                  className="w-full p-3 bg-[#F7F9F7] dark:bg-[#121412] rounded-xl text-xs font-medium border border-[#ECECEC] dark:border-[#2C322E] text-[#1E1E1E] dark:text-[#F7F9F7] focus:outline-none focus:border-[#8FAF9B]"
                   rows={3}
                 />
 
                 <div className="flex items-center justify-between">
-                  <span className="text-xxs text-[#757575] font-semibold">ATTACH MEMORIES</span>
+                  <span className="text-xxs text-[#757575] dark:text-[#9AA09C] font-semibold">ATTACH MEMORIES</span>
                   <div className="flex space-x-2">
-                    {/* Voice recorder mock */}
                     <button
                       type="button"
                       onClick={() => setVoiceRecorded(!voiceRecorded)}
                       className={`p-2 rounded-lg border text-xxs font-bold flex items-center space-x-1 transition-all ${
                         voiceRecorded 
-                          ? 'bg-[#8FAF9B]/10 border-[#8FAF9B] text-[#607567]' 
-                          : 'bg-white border-[#ECECEC] text-[#757575]'
+                          ? 'bg-[#8FAF9B]/10 border-[#8FAF9B] text-[#607567] dark:text-[#8FAF9B]' 
+                          : 'bg-white dark:bg-[#1E221E] border-[#ECECEC] dark:border-[#2C322E] text-[#757575] dark:text-[#9AA09C]'
                       }`}
                     >
                       <Mic className="w-3.5 h-3.5" />
                       <span>{voiceRecorded ? 'Recorded' : 'Voice Memo'}</span>
                     </button>
 
-                    {/* Receipt image capture mock */}
                     <button
                       type="button"
                       onClick={() => setPhotoAttached(!photoAttached)}
                       className={`p-2 rounded-lg border text-xxs font-bold flex items-center space-x-1 transition-all ${
                         photoAttached 
-                          ? 'bg-[#8FAF9B]/10 border-[#8FAF9B] text-[#607567]' 
-                          : 'bg-white border-[#ECECEC] text-[#757575]'
+                          ? 'bg-[#8FAF9B]/10 border-[#8FAF9B] text-[#607567] dark:text-[#8FAF9B]' 
+                          : 'bg-white dark:bg-[#1E221E] border-[#ECECEC] dark:border-[#2C322E] text-[#757575] dark:text-[#9AA09C]'
                       }`}
                     >
                       <Camera className="w-3.5 h-3.5" />

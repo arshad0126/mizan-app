@@ -4,10 +4,10 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMizanStore } from '@/store/useMizanStore';
 import { formatAmount } from '@/lib/utils';
-import { ArrowLeftRight, CreditCard, Landmark, Wallet, Banknote, Sparkles } from 'lucide-react';
+import { CreditCard, Landmark, Wallet, Banknote, Sparkles } from 'lucide-react';
 
 export default function AccountSwiper() {
-  const { accounts, transactions, privacyMode } = useMizanStore();
+  const { accounts, transactions, privacyMode, theme } = useMizanStore();
   const [selectedAccId, setSelectedAccId] = useState<string | null>(null);
 
   const getAccountIcon = (type: string) => {
@@ -25,20 +25,20 @@ export default function AccountSwiper() {
     }
   };
 
-  // Get selected account transactions
   const selectedAccount = accounts.find(a => a.id === selectedAccId);
   const accountTx = transactions.filter(t => t.accountId === selectedAccId).slice(0, 3);
+  const isHiddenMode = privacyMode === 'hide-all';
 
   return (
     <div className="w-full flex flex-col mt-6">
       <div className="px-6 flex justify-between items-center mb-3">
-        <h3 className="text-sm font-bold text-[#607567] tracking-wider uppercase">MY WALLET</h3>
-        <span className="text-xxs text-[#757575] font-medium">Swipe to view</span>
+        <h3 className="text-sm font-bold text-[#607567] dark:text-[#8FAF9B] tracking-wider uppercase">MY WALLET</h3>
+        <span className="text-xxs text-[#757575] dark:text-[#9AA09C] font-medium">Swipe to view</span>
       </div>
 
       {/* Horizontal Carousel */}
       <div className="w-full flex overflow-x-auto snap-x snap-mandatory no-scrollbar px-6 space-x-4 py-2">
-        {accounts.map((acc, index) => {
+        {accounts.map((acc) => {
           const isSelected = selectedAccId === acc.id;
           
           return (
@@ -47,36 +47,37 @@ export default function AccountSwiper() {
               whileTap={{ scale: 0.97 }}
               onClick={() => setSelectedAccId(isSelected ? null : acc.id)}
               className={`snap-center shrink-0 w-[240px] h-[140px] rounded-3xl p-5 cursor-pointer relative overflow-hidden transition-all duration-300 flex flex-col justify-between shadow-premium snap-always ${
-                privacyMode === 'hide-all'
-                  ? 'bg-white border border-[#ECECEC]'
+                isHiddenMode
+                  ? 'bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E]'
                   : ''
               }`}
               style={{
-                background: privacyMode === 'hide-all' 
+                background: isHiddenMode 
                   ? undefined 
                   : `linear-gradient(135deg, ${acc.color}dd, ${acc.color})`,
-                border: isSelected ? '2.5px solid #1E1E1E' : '1px solid transparent',
+                border: isSelected 
+                  ? (theme === 'dark' ? '2.5px solid #8FAF9B' : '2.5px solid #1E1E1E') 
+                  : '1px solid transparent',
               }}
             >
-              {/* Card texture design */}
               <div className="absolute -right-4 -bottom-4 w-24 h-24 rounded-full bg-white/5 pointer-events-none" />
               <div className="absolute right-8 -top-8 w-20 h-20 rounded-full bg-white/5 pointer-events-none" />
 
               <div className="flex justify-between items-start">
                 <div className="flex flex-col">
                   <span className={`text-xxs font-bold uppercase tracking-wider ${
-                    privacyMode === 'hide-all' ? 'text-[#757575]' : 'text-white/70'
+                    isHiddenMode ? 'text-[#757575] dark:text-[#9AA09C]' : 'text-white/70'
                   }`}>
                     {acc.type}
                   </span>
                   <span className={`text-sm font-bold mt-0.5 leading-tight ${
-                    privacyMode === 'hide-all' ? 'text-[#1E1E1E]' : 'text-white'
+                    isHiddenMode ? 'text-[#1E1E1E] dark:text-[#F7F9F7]' : 'text-white'
                   }`}>
                     {acc.name}
                   </span>
                 </div>
                 <div className={`p-2 rounded-xl ${
-                  privacyMode === 'hide-all' ? 'bg-[#F7F9F7] text-[#757575]' : 'bg-white/15 text-white'
+                  isHiddenMode ? 'bg-[#F7F9F7] dark:bg-[#121412] text-[#757575] dark:text-[#9AA09C]' : 'bg-white/15 text-white'
                 }`}>
                   {getAccountIcon(acc.type)}
                 </div>
@@ -84,19 +85,19 @@ export default function AccountSwiper() {
 
               <div className="flex flex-col">
                 <span className={`text-xs font-semibold ${
-                  privacyMode === 'hide-all' ? 'text-[#757575]' : 'text-white/80'
+                  isHiddenMode ? 'text-[#757575] dark:text-[#9AA09C]' : 'text-white/80'
                 }`}>
                   Balance
                 </span>
                 <div className="flex items-baseline justify-between mt-0.5">
                   <span className={`text-xl font-black tracking-tight transition-all duration-300 ${
-                    privacyMode === 'hide-all' ? 'text-[#1E1E1E] filter blur-xs' : 'text-white'
+                    isHiddenMode ? 'text-[#1E1E1E] dark:text-[#F7F9F7] filter blur-xs' : 'text-white'
                   }`}>
                     {formatAmount(acc.balance, privacyMode)}
                   </span>
                   <span className={`text-xxs font-bold px-1.5 py-0.5 rounded-md ${
-                    privacyMode === 'hide-all'
-                      ? 'bg-[#F7F9F7] text-[#757575]'
+                    isHiddenMode
+                      ? 'bg-[#F7F9F7] dark:bg-[#121412] text-[#757575] dark:text-[#9AA09C]'
                       : acc.monthlyChange >= 0
                       ? 'bg-[#63A66F]/20 text-[#63A66F]'
                       : 'bg-[#D66C6C]/25 text-[#D66C6C]'
@@ -110,7 +111,7 @@ export default function AccountSwiper() {
         })}
       </div>
 
-      {/* Account Details Slide Down (Expanded Card View) */}
+      {/* Account Details */}
       <AnimatePresence>
         {selectedAccId && selectedAccount && (
           <motion.div
@@ -119,29 +120,29 @@ export default function AccountSwiper() {
             exit={{ opacity: 0, height: 0 }}
             className="px-6 overflow-hidden w-full"
           >
-            <div className="bg-white border border-[#ECECEC] rounded-3xl p-5 mt-4 flex flex-col shadow-sm">
-              <div className="flex justify-between items-center border-b border-[#ECECEC] pb-3 mb-3">
-                <span className="text-xs font-bold text-[#607567] tracking-wide">ACCOUNT TRANSACTIONS</span>
+            <div className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-3xl p-5 mt-4 flex flex-col shadow-sm">
+              <div className="flex justify-between items-center border-b border-[#ECECEC] dark:border-[#2C322E] pb-3 mb-3">
+                <span className="text-xs font-bold text-[#607567] dark:text-[#8FAF9B] tracking-wide">ACCOUNT TRANSACTIONS</span>
                 <button 
                   onClick={() => setSelectedAccId(null)}
-                  className="text-xxs font-bold text-[#757575] hover:text-[#1E1E1E]"
+                  className="text-xxs font-bold text-[#757575] dark:text-[#9AA09C] hover:text-[#1E1E1E] dark:hover:text-[#F7F9F7]"
                 >
                   Close
                 </button>
               </div>
 
               {accountTx.length === 0 ? (
-                <p className="text-xs text-[#757575] italic py-4 text-center">No recent transactions recorded on this account</p>
+                <p className="text-xs text-[#757575] dark:text-[#9AA09C] italic py-4 text-center">No recent transactions recorded on this account</p>
               ) : (
                 <div className="flex flex-col space-y-3">
                   {accountTx.map((tx) => (
                     <div key={tx.id} className="flex justify-between items-center text-xs">
                       <div className="flex flex-col">
-                        <span className="font-semibold text-[#1E1E1E]">{tx.notes || tx.category}</span>
-                        <span className="text-xxs text-[#757575]">{tx.date}</span>
+                        <span className="font-semibold text-[#1E1E1E] dark:text-[#F7F9F7]">{tx.notes || tx.category}</span>
+                        <span className="text-xxs text-[#757575] dark:text-[#9AA09C]">{tx.date}</span>
                       </div>
                       <span className={`font-bold ${
-                        tx.type === 'income' ? 'text-[#63A66F]' : 'text-[#1E1E1E]'
+                        tx.type === 'income' ? 'text-[#63A66F]' : 'text-[#1E1E1E] dark:text-[#F7F9F7]'
                       }`}>
                         {tx.type === 'income' ? '+' : '-'}{formatAmount(tx.amount, privacyMode)}
                       </span>

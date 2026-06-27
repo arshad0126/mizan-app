@@ -1,6 +1,6 @@
 // Client-side IndexedDB wrapper for Mizan
 const DB_NAME = 'mizan_local_db';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Incremented version to support settings store
 
 export interface Account {
   id: string;
@@ -16,8 +16,8 @@ export interface Transaction {
   accountId: string;
   type: 'income' | 'expense' | 'transfer' | 'sadaqah';
   amount: number;
-  category: string; // e.g. "Food", "Rent", "Sadaqah", "Parents", "Salary"
-  date: string; // ISO date YYYY-MM-DD
+  category: string;
+  date: string;
   notes: string;
   isSplit?: boolean;
   journal?: {
@@ -40,7 +40,7 @@ export interface Goal {
   target: number;
   saved: number;
   category: string;
-  timeline: string; // e.g. "October 2026"
+  timeline: string;
   icon: string;
 }
 
@@ -59,100 +59,13 @@ export interface ZakatRecord {
   isPaid: boolean;
 }
 
-const DEFAULT_ACCOUNTS: Account[] = [
-  { id: 'acc-1', name: 'Salary Account', type: 'salary', balance: 45000, monthlyChange: 12.5, color: '#8FAF9B' },
-  { id: 'acc-2', name: 'Savings Account', type: 'savings', balance: 15000, monthlyChange: 4.2, color: '#607567' },
-  { id: 'acc-3', name: 'UPI Wallet', type: 'upi', balance: 8000, monthlyChange: -2.1, color: '#AFC5B3' },
-  { id: 'acc-4', name: 'Cash', type: 'cash', balance: 2000, monthlyChange: -1.5, color: '#B3C8B9' },
-];
-
-const DEFAULT_TRANSACTIONS: Transaction[] = [
-  {
-    id: 'tx-1',
-    accountId: 'acc-1',
-    type: 'income',
-    amount: 70000,
-    category: 'Salary',
-    date: '2026-06-01',
-    notes: 'June Monthly Salary',
-  },
-  {
-    id: 'tx-2',
-    accountId: 'acc-1',
-    type: 'expense',
-    amount: 15000,
-    category: 'Rent',
-    date: '2026-06-02',
-    notes: 'Apartment Rent',
-  },
-  {
-    id: 'tx-3',
-    accountId: 'acc-1',
-    type: 'expense',
-    amount: 10000,
-    category: 'Parents',
-    date: '2026-06-03',
-    notes: 'Monthly support for Ammi and Abbu',
-    journal: {
-      notes: 'Transfer for household expenditures and medicines.',
-      isMemory: true,
-    }
-  },
-  {
-    id: 'tx-4',
-    accountId: 'acc-3',
-    type: 'sadaqah',
-    amount: 1000,
-    category: 'Sadaqah',
-    date: '2026-06-05',
-    notes: 'Friday Charity to Local Masjid',
-  },
-  {
-    id: 'tx-5',
-    accountId: 'acc-3',
-    type: 'expense',
-    amount: 350,
-    category: 'Coffee',
-    date: '2026-06-12',
-    notes: 'Coffee with classmates',
-  },
-  {
-    id: 'tx-6',
-    accountId: 'acc-4',
-    type: 'expense',
-    amount: 1500,
-    category: 'Food',
-    date: '2026-06-15',
-    notes: 'Groceries from local market',
-  },
-  {
-    id: 'tx-7',
-    accountId: 'acc-3',
-    type: 'sadaqah',
-    amount: 5000,
-    category: 'Sadaqah',
-    date: '2026-06-20',
-    notes: 'Bought Ammi a brand new phone',
-    journal: {
-      notes: 'Bought Ammi a phone. Her smile was priceless. Alhamdulillah.',
-      isMemory: true,
-    }
-  }
-];
-
-const DEFAULT_BUDGETS: Budget[] = [
-  { category: 'Needs', allocated: 25000, spent: 16500 },
-  { category: 'Parents', allocated: 10000, spent: 10000 },
-  { category: 'Savings', allocated: 20000, spent: 5000 },
-  { category: 'Charity', allocated: 5000, spent: 6000 },
-  { category: 'Wants', allocated: 10000, spent: 1850 },
-];
-
-const DEFAULT_GOALS: Goal[] = [
-  { id: 'goal-1', title: 'Emergency Fund', target: 100000, saved: 35000, category: 'Emergency', timeline: 'October 2026', icon: 'ShieldCheck' },
-  { id: 'goal-2', title: 'Hajj Portfolio', target: 400000, saved: 80000, category: 'Hajj', timeline: 'June 2028', icon: 'Milestone' },
-  { id: 'goal-3', title: 'Parents Hajj/Umrah', target: 200000, saved: 60000, category: 'Umrah', timeline: 'December 2027', icon: 'Heart' },
-];
+export interface Settings {
+  id: string; // 'app_settings'
+  userName: string;
+  userPin: string;
+  isOnboarded: boolean;
+  theme: 'light' | 'dark';
+}
 
 let dbInstance: IDBDatabase | null = null;
 
@@ -191,40 +104,21 @@ function getDB(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains('zakat')) {
         db.createObjectStore('zakat', { keyPath: 'id' });
       }
+      if (!db.objectStoreNames.contains('settings')) {
+        db.createObjectStore('settings', { keyPath: 'id' });
+      }
     };
   });
 }
 
-// Populate the Database with seeded data if it is empty
+// Populate the Database with seeded data if it is empty (Replaced with Onboarding Wizard check)
 export async function initSeedData(): Promise<void> {
+  // We no longer auto-seed transactions or accounts.
+  // Instead, the setup onboarding wizard will populate custom balances.
   try {
-    const db = await getDB();
-    
-    const checkEmpty = (storeName: string): Promise<boolean> => {
-      return new Promise((resolve) => {
-        const tx = db.transaction(storeName, 'readonly');
-        const store = tx.objectStore(storeName);
-        const countReq = store.count();
-        countReq.onsuccess = () => resolve(countReq.result === 0);
-        countReq.onerror = () => resolve(true);
-      });
-    };
-
-    const isAccountsEmpty = await checkEmpty('accounts');
-    if (isAccountsEmpty) {
-      const tx = db.transaction(['accounts', 'transactions', 'budgets', 'goals'], 'readwrite');
-      
-      DEFAULT_ACCOUNTS.forEach(acc => tx.objectStore('accounts').put(acc));
-      DEFAULT_TRANSACTIONS.forEach(t => tx.objectStore('transactions').put(t));
-      DEFAULT_BUDGETS.forEach(b => tx.objectStore('budgets').put(b));
-      DEFAULT_GOALS.forEach(g => tx.objectStore('goals').put(g));
-
-      await new Promise<void>((resolve) => {
-        tx.oncomplete = () => resolve();
-      });
-    }
+    await getDB();
   } catch (e) {
-    console.error('Failed to seed IndexedDB:', e);
+    console.error('Failed to initialize IndexedDB:', e);
   }
 }
 
@@ -294,4 +188,23 @@ export async function getZakatRecords(): Promise<ZakatRecord[]> {
 
 export async function saveZakatRecord(record: ZakatRecord): Promise<void> {
   return putItem('zakat', record);
+}
+
+export async function getSettings(): Promise<Settings | null> {
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    try {
+      const tx = db.transaction('settings', 'readonly');
+      const store = tx.objectStore('settings');
+      const req = store.get('app_settings');
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    } catch (e) {
+      resolve(null);
+    }
+  });
+}
+
+export async function saveSettings(settings: Settings): Promise<void> {
+  return putItem('settings', settings);
 }

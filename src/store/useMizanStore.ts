@@ -5,38 +5,54 @@ import {
   Budget,
   Goal,
   ZakatRecord,
+  Settings,
   getAccounts,
   getTransactions,
   getBudgets,
   getGoals,
   getZakatRecords,
+  getSettings,
   saveAccount,
   saveTransaction,
   saveBudget,
   saveGoal,
   saveZakatRecord,
+  saveSettings,
   initSeedData,
 } from '@/lib/db';
 
 export type PrivacyMode = 'normal' | 'hide-all' | 'hide-amounts' | 'approximate';
 
 interface MizanState {
+  // Database Tables
   accounts: Account[];
   transactions: Transaction[];
   budgets: Budget[];
   goals: Goal[];
   zakatRecords: ZakatRecord[];
   
+  // Settings & User States
+  isOnboarded: boolean;
+  userName: string;
+  userPin: string;
+  theme: 'light' | 'dark';
+  
   // App UX States
   isLoading: boolean;
   activeTab: 'home' | 'timeline' | 'budget' | 'goals' | 'islamic' | 'profile';
   privacyMode: PrivacyMode;
   isLocked: boolean;
-  autoLockDuration: number; // in seconds, 0 = immediate/manual, 30, 60, 300
+  autoLockDuration: number; // in seconds
   isGuestMode: boolean;
   
   // Actions
   fetchData: () => Promise<void>;
+  completeOnboarding: (
+    name: string,
+    pin: string,
+    initialAccounts: { name: string; type: Account['type']; balance: number; color: string }[]
+  ) => Promise<void>;
+  toggleTheme: () => Promise<void>;
   addTransaction: (tx: Omit<Transaction, 'id'>) => Promise<void>;
   addAccount: (acc: Account) => Promise<void>;
   updateBudget: (category: string, allocated: number) => Promise<void>;
@@ -56,6 +72,12 @@ export const useMizanStore = create<MizanState>((set, get) => ({
   budgets: [],
   goals: [],
   zakatRecords: [],
+  
+  isOnboarded: false,
+  userName: '',
+  userPin: '',
+  theme: 'light',
+  
   isLoading: true,
   activeTab: 'home',
   privacyMode: 'normal',
@@ -67,14 +89,42 @@ export const useMizanStore = create<MizanState>((set, get) => ({
     set({ isLoading: true });
     try {
       await initSeedData();
+      
+      // Load Settings
+      const settings = await getSettings();
+      let isOnboarded = false;
+      let userName = 'Guest';
+      let userPin = '';
+      let theme: 'light' | 'dark' = 'light';
+
+      if (settings) {
+        isOnboarded = settings.isOnboarded;
+        userName = settings.userName;
+        userPin = settings.userPin;
+        theme = settings.theme;
+
+        // Apply theme color class to HTML element
+        if (typeof document !== 'undefined') {
+          if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        }
+      }
+
+      // Load Other DB Entities
       const accounts = await getAccounts();
       const transactions = await getTransactions();
       const budgets = await getBudgets();
       const goals = await getGoals();
       const zakatRecords = await getZakatRecords();
       
-      // Sort transactions by date descending
+      // Sort transactions descending
       transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      // If we are onboarded and PIN is set, lock on restart
+      const isLocked = isOnboarded && userPin !== '';
 
       set({
         accounts,
@@ -82,6 +132,11 @@ export const useMizanStore = create<MizanState>((set, get) => ({
         budgets,
         goals,
         zakatRecords,
+        isOnboarded,
+        userName,
+        userPin,
+        theme,
+        isLocked,
         isLoading: false,
       });
     } catch (e) {
@@ -90,14 +145,112 @@ export const useMizanStore = create<MizanState>((set, get) => ({
     }
   },
 
+  completeOnboarding: async (name, pin, initialAccounts) => {
+    set({ isLoading: true });
+    try {
+      // 1. Save Settings
+      const currentTheme = get().theme;
+      const settingsObj: Settings = {
+        id: 'app_settings',
+        userName: name,
+        userPin: pin,
+        isOnboarded: true,
+        theme: currentTheme,
+      };
+      await saveSettings(settingsObj);
+
+      // 2. Save Accounts
+      const mappedAccounts: Account[] = initialAccounts.map((acc, index) => ({
+        id: `acc-${index + 1}`,
+        name: acc.name,
+        type: acc.type,
+        balance: acc.balance,
+        monthlyChange: 0,
+        color: acc.color,
+      }));
+
+      for (const acc of mappedAccounts) {
+        await saveAccount(acc);
+      }
+
+      // 3. Save Default Goals
+      const defaultGoals: Goal[] = [
+        { id: 'goal-1', title: 'Emergency Fund', target: 100000, saved: 0, category: 'Emergency', timeline: 'October 2026', icon: 'ShieldCheck' },
+        { id: 'goal-2', title: 'Hajj Portfolio', target: 400000, saved: 0, category: 'Hajj', timeline: 'June 2028', icon: 'Milestone' },
+        { id: 'goal-3', title: 'Parents Hajj/Umrah', target: 200000, saved: 0, category: 'Umrah', timeline: 'December 2027', icon: 'Heart' },
+      ];
+
+      for (const g of defaultGoals) {
+        await saveGoal(g);
+      }
+
+      // 4. Save Default Budget Categories (Initialized to zero-allocations)
+      const defaultBudgets: Budget[] = [
+        { category: 'Needs', allocated: 0, spent: 0 },
+        { category: 'Parents', allocated: 0, spent: 0 },
+        { category: 'Savings', allocated: 0, spent: 0 },
+        { category: 'Charity', allocated: 0, spent: 0 },
+        { category: 'Wants', allocated: 0, spent: 0 },
+      ];
+
+      for (const b of defaultBudgets) {
+        await saveBudget(b);
+      }
+
+      set({
+        isOnboarded: true,
+        userName: name,
+        userPin: pin,
+        accounts: mappedAccounts,
+        goals: defaultGoals,
+        budgets: defaultBudgets,
+        transactions: [],
+        zakatRecords: [],
+        isLocked: false,
+        isLoading: false,
+      });
+    } catch (e) {
+      console.error('Failed to complete onboarding:', e);
+      set({ isLoading: false });
+    }
+  },
+
+  toggleTheme: async () => {
+    const currentTheme = get().theme;
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    
+    // Save settings
+    const settings = await getSettings();
+    if (settings) {
+      await saveSettings({ ...settings, theme: newTheme });
+    } else {
+      await saveSettings({
+        id: 'app_settings',
+        userName: get().userName || 'Arshad',
+        userPin: get().userPin || '',
+        isOnboarded: get().isOnboarded,
+        theme: newTheme,
+      });
+    }
+
+    // Apply class to HTML element
+    if (typeof document !== 'undefined') {
+      if (newTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+
+    set({ theme: newTheme });
+  },
+
   addTransaction: async (txData) => {
     const id = 'tx-' + Math.random().toString(36).substring(2, 9);
     const newTx: Transaction = { ...txData, id };
     
-    // Save to DB
     await saveTransaction(newTx);
     
-    // Update account balances locally and in DB
     const currentAccounts = [...get().accounts];
     const accountIndex = currentAccounts.findIndex(a => a.id === newTx.accountId);
     
@@ -116,20 +269,11 @@ export const useMizanStore = create<MizanState>((set, get) => ({
       await saveAccount(updatedAcc);
     }
     
-    // If transaction is a transfer, handle destination account adjustment
-    if (newTx.type === 'transfer' && newTx.notes.includes('→')) {
-      // Notes format: "Transfer → [Dest Account Name]"
-      // We will parse destination from account selector in component or handle manually
-    }
-
-    // Update budget spent values if expense or sadaqah
     const currentBudgets = [...get().budgets];
     if (newTx.type === 'expense' || newTx.type === 'sadaqah') {
       let budgetCategory = newTx.category;
-      
-      // Map category to budget group
-      // Groups: "Needs", "Parents", "Savings", "Charity", "Wants"
       let budgetGroup = 'Wants';
+      
       const needsCats = ['Food', 'Rent', 'Medical', 'Utilities', 'Transport', 'Education'];
       const wantsCats = ['Shopping', 'Coffee', 'Restaurants', 'Entertainment', 'Travel', 'Luxury'];
       const islamicCats = ['Sadaqah', 'Zakat', 'Qurbani', 'Masjid', 'Community'];
@@ -153,7 +297,6 @@ export const useMizanStore = create<MizanState>((set, get) => ({
       }
     }
 
-    // Update transactions list in state (sorted descending)
     const updatedTxList = [newTx, ...get().transactions].sort((a, b) => 
       new Date(b.date).getTime() - new Date(a.date).getTime()
     );
@@ -188,19 +331,17 @@ export const useMizanStore = create<MizanState>((set, get) => ({
   },
 
   contributeToGoal: async (goalId, amount, sourceAccountId) => {
-    // 1. Deduct amount from account balance
     const currentAccounts = [...get().accounts];
     const accIndex = currentAccounts.findIndex(a => a.id === sourceAccountId);
     if (accIndex === -1) return;
     
     const acc = currentAccounts[accIndex];
-    if (acc.balance < amount) return; // Prevent overdrawing
+    if (acc.balance < amount) return;
     
     const updatedAcc = { ...acc, balance: acc.balance - amount };
     currentAccounts[accIndex] = updatedAcc;
     await saveAccount(updatedAcc);
     
-    // 2. Increment goal saved amount
     const currentGoals = [...get().goals];
     const goalIndex = currentGoals.findIndex(g => g.id === goalId);
     if (goalIndex === -1) return;
@@ -210,7 +351,6 @@ export const useMizanStore = create<MizanState>((set, get) => ({
     currentGoals[goalIndex] = updatedGoal;
     await saveGoal(updatedGoal);
     
-    // 3. Create Goal Contribution Transaction
     const txId = 'tx-' + Math.random().toString(36).substring(2, 9);
     const tx: Transaction = {
       id: txId,
@@ -226,7 +366,6 @@ export const useMizanStore = create<MizanState>((set, get) => ({
     };
     await saveTransaction(tx);
     
-    // 4. Update budget spent values for "Savings"
     const currentBudgets = [...get().budgets];
     const bIndex = currentBudgets.findIndex(b => b.category === 'Savings');
     if (bIndex > -1) {
@@ -263,7 +402,6 @@ export const useMizanStore = create<MizanState>((set, get) => ({
   },
 
   allocatePaydayWizard: async (incomeAmount, allocations) => {
-    // 1. Record the salary income transaction
     const salaryAcc = get().accounts.find(a => a.type === 'salary') || get().accounts[0];
     const salaryTxId = 'tx-' + Math.random().toString(36).substring(2, 9);
     const salaryTx: Transaction = {
@@ -277,7 +415,6 @@ export const useMizanStore = create<MizanState>((set, get) => ({
     };
     await saveTransaction(salaryTx);
     
-    // Update salary account balance
     const currentAccounts = [...get().accounts];
     const salIndex = currentAccounts.findIndex(a => a.id === salaryAcc.id);
     if (salIndex > -1) {
@@ -287,19 +424,14 @@ export const useMizanStore = create<MizanState>((set, get) => ({
       await saveAccount(updatedAcc);
     }
 
-    // 2. Perform allocations
-    // For each allocation, we modify the budget limits (allocated values)
     const currentBudgets = [...get().budgets];
-    const currentGoals = [...get().goals];
     const newTxList = [salaryTx];
 
     for (const alloc of allocations) {
-      // Find or create budget category
       const bIndex = currentBudgets.findIndex(b => b.category === alloc.category);
       if (bIndex > -1) {
         const budget = currentBudgets[bIndex];
-        // Set new allocation value
-        const updated = { ...budget, allocated: alloc.amount, spent: 0 }; // reset monthly spent on new payday wizard allocation
+        const updated = { ...budget, allocated: alloc.amount, spent: 0 };
         currentBudgets[bIndex] = updated;
         await saveBudget(updated);
       } else {
@@ -308,8 +440,6 @@ export const useMizanStore = create<MizanState>((set, get) => ({
         await saveBudget(newB);
       }
 
-      // If category is "Savings", distribute to goals as well or keep in savings account
-      // Let's create transactions showing these allocations
       if (alloc.amount > 0) {
         const allocTxId = 'tx-' + Math.random().toString(36).substring(2, 9);
         const allocTx: Transaction = {
@@ -324,15 +454,12 @@ export const useMizanStore = create<MizanState>((set, get) => ({
         await saveTransaction(allocTx);
         newTxList.push(allocTx);
 
-        // If source account is different from salary account, move the balance
         if (alloc.accountId !== salaryAcc.id) {
-          // Deduct from salary account
           const salAccIdx = currentAccounts.findIndex(a => a.id === salaryAcc.id);
           if (salAccIdx > -1) {
             currentAccounts[salAccIdx].balance -= alloc.amount;
             await saveAccount(currentAccounts[salAccIdx]);
           }
-          // Add to target account
           const tarAccIdx = currentAccounts.findIndex(a => a.id === alloc.accountId);
           if (tarAccIdx > -1) {
             currentAccounts[tarAccIdx].balance += alloc.amount;
@@ -342,7 +469,6 @@ export const useMizanStore = create<MizanState>((set, get) => ({
       }
     }
 
-    // Update transactions list in state
     const finalTxList = [...newTxList, ...get().transactions].sort((a, b) => 
       new Date(b.date).getTime() - new Date(a.date).getTime()
     );

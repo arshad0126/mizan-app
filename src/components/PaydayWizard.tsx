@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMizanStore } from '@/store/useMizanStore';
-import { X, Sparkles, Check, CheckCircle2, ChevronRight, ChevronLeft, ArrowDownCircle, HeartHandshake } from 'lucide-react';
+import { X, Sparkles, Check, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface PaydayWizardProps {
@@ -37,7 +37,6 @@ export default function PaydayWizard({ isOpen, onClose }: PaydayWizardProps) {
       const salaryAcc = accounts.find(a => a.type === 'salary') || accounts[0];
       const savingsAcc = accounts.find(a => a.type === 'savings') || accounts[0];
       const upiAcc = accounts.find(a => a.type === 'upi') || accounts[0];
-      const cashAcc = accounts.find(a => a.type === 'cash') || accounts[0];
 
       setSelectedDestAcc({
         Needs: salaryAcc.id,
@@ -75,7 +74,6 @@ export default function PaydayWizard({ isOpen, onClose }: PaydayWizardProps) {
 
     await allocatePaydayWizard(parsedIncome, allocationsList);
 
-    // Rain of green success confetti
     confetti({
       particleCount: 150,
       spread: 80,
@@ -84,7 +82,6 @@ export default function PaydayWizard({ isOpen, onClose }: PaydayWizardProps) {
     });
 
     onClose();
-    // Reset wizard
     setStep(1);
     setIncomeAmount('70000');
   };
@@ -103,19 +100,19 @@ export default function PaydayWizard({ isOpen, onClose }: PaydayWizardProps) {
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-        className="fixed bottom-0 left-0 right-0 max-h-[92vh] overflow-y-auto bg-[#F7F9F7] rounded-t-[32px] shadow-premium-lg z-50 px-6 pt-5 pb-8 safe-bottom"
+        className="fixed bottom-0 left-0 right-0 max-h-[92vh] overflow-y-auto bg-[#F7F9F7] dark:bg-[#121412] text-[#1E1E1E] dark:text-[#F7F9F7] rounded-t-[32px] shadow-premium-lg z-50 px-6 pt-5 pb-8 safe-bottom"
       >
         {/* Notch */}
-        <div className="w-12 h-1.5 bg-[#ECECEC] rounded-full mx-auto mb-5 cursor-pointer" onClick={onClose} />
+        <div className="w-12 h-1.5 bg-[#ECECEC] dark:bg-[#2C322E] rounded-full mx-auto mb-5 cursor-pointer" onClick={onClose} />
 
         <div className="flex justify-between items-center mb-6">
           <div className="flex flex-col">
-            <span className="text-xxs text-[#757575] font-bold tracking-widest uppercase">BUDGET ENVELOPE WIZARD</span>
-            <h2 className="text-lg font-bold text-[#1E1E1E] mt-0.5">Payday wizard</h2>
+            <span className="text-xxs text-[#757575] dark:text-[#9AA09C] font-bold tracking-widest uppercase">BUDGET ENVELOPE WIZARD</span>
+            <h2 className="text-lg font-bold text-[#1E1E1E] dark:text-[#F7F9F7] mt-0.5">Payday wizard</h2>
           </div>
           <button 
             onClick={onClose}
-            className="p-2 rounded-full border border-[#ECECEC] bg-white text-[#757575] active:scale-95 transition-all shadow-sm"
+            className="p-2 rounded-full border border-[#ECECEC] dark:border-[#2C322E] bg-white dark:bg-[#1E221E] text-[#757575] dark:text-[#9AA09C] active:scale-95 transition-all shadow-sm"
           >
             <X className="w-4 h-4" />
           </button>
@@ -131,7 +128,7 @@ export default function PaydayWizard({ isOpen, onClose }: PaydayWizardProps) {
                   ? 'w-10 bg-[#8FAF9B]'
                   : s < step
                   ? 'w-4 bg-[#607567]'
-                  : 'w-4 bg-[#ECECEC]'
+                  : 'w-4 bg-[#ECECEC] dark:bg-[#2C322E]'
               }`}
             />
           ))}
@@ -141,13 +138,14 @@ export default function PaydayWizard({ isOpen, onClose }: PaydayWizardProps) {
           {/* STEP 1: Incoming Provision */}
           {step === 1 && (
             <motion.div
+              key="step1"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               className="flex flex-col space-y-5"
             >
-              <div className="flex flex-col bg-white border border-[#ECECEC] rounded-2xl p-5 shadow-sm">
-                <label className="text-xxs font-bold text-[#757575] tracking-wider uppercase mb-1.5">INCOMING SALARY / PROVISION</label>
+              <div className="flex flex-col bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-2xl p-5 shadow-sm">
+                <label className="text-xxs font-bold text-[#757575] dark:text-[#9AA09C] tracking-wider uppercase mb-1.5">INCOMING SALARY / PROVISION</label>
                 <div className="flex items-center">
                   <span className="text-3xl font-extrabold text-[#8FAF9B] mr-2">₹</span>
                   <input
@@ -155,14 +153,14 @@ export default function PaydayWizard({ isOpen, onClose }: PaydayWizardProps) {
                     value={incomeAmount}
                     onChange={(e) => setIncomeAmount(e.target.value)}
                     placeholder="Enter salary"
-                    className="w-full text-3xl font-black outline-none border-none text-[#1E1E1E]"
+                    className="w-full text-3xl font-black outline-none border-none text-[#1E1E1E] dark:text-[#F7F9F7] bg-transparent"
                   />
                 </div>
               </div>
 
-              <div className="p-4 bg-[#8FAF9B]/10 rounded-2xl flex items-start space-x-3 border border-[#8FAF9B]/20">
-                <Sparkles className="w-5 h-5 text-[#607567] shrink-0 mt-0.5" />
-                <div className="flex flex-col text-xs text-[#607567] font-medium leading-relaxed">
+              <div className="p-4 bg-[#8FAF9B]/10 dark:bg-[#8FAF9B]/5 rounded-2xl flex items-start space-x-3 border border-[#8FAF9B]/20 dark:border-[#8FAF9B]/10">
+                <Sparkles className="w-5 h-5 text-[#607567] dark:text-[#8FAF9B] shrink-0 mt-0.5" />
+                <div className="flex flex-col text-xs text-[#607567] dark:text-[#8FAF9B] font-medium leading-relaxed">
                   <span className="font-bold mb-0.5">Barakah is in Planning</span>
                   <span>"Take benefit of five before five... your wealth before your poverty." Manage this provision intentionally. Let's allocate it to zero-based envelopes.</span>
                 </div>
@@ -182,6 +180,7 @@ export default function PaydayWizard({ isOpen, onClose }: PaydayWizardProps) {
           {/* STEP 2: Zero-Based Allocation */}
           {step === 2 && (
             <motion.div
+              key="step2"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
@@ -190,8 +189,8 @@ export default function PaydayWizard({ isOpen, onClose }: PaydayWizardProps) {
               {/* Floating Counter */}
               <div className={`p-4 rounded-2xl flex justify-between items-center border transition-all duration-300 ${
                 remainingToAllocate === 0
-                  ? 'bg-[#63A66F]/10 border-[#63A66F] text-[#63A66F]'
-                  : 'bg-amber-50 border-amber-200 text-amber-700'
+                  ? 'bg-[#63A66F]/10 dark:bg-[#63A66F]/5 border-[#63A66F] dark:border-[#63A66F]/30 text-[#63A66F]'
+                  : 'bg-amber-50 dark:bg-amber-950/10 border-amber-200 dark:border-amber-900/30 text-amber-700 dark:text-amber-400'
               }`}>
                 <div className="flex flex-col">
                   <span className="text-xxs font-bold uppercase tracking-wider">REMAINING TO ALLOCATE</span>
@@ -203,19 +202,19 @@ export default function PaydayWizard({ isOpen, onClose }: PaydayWizardProps) {
                     <span>Zero Balance!</span>
                   </div>
                 ) : (
-                  <span className="text-xxs font-bold px-2.5 py-1.5 bg-amber-100 rounded-full">
+                  <span className="text-xxs font-bold px-2.5 py-1.5 bg-amber-100 dark:bg-amber-950/40 rounded-full">
                     {remainingToAllocate > 0 ? 'Short' : 'Over'} by ₹{Math.abs(remainingToAllocate).toLocaleString('en-IN')}
                   </span>
                 )}
               </div>
 
-              {/* Allocation Sliders/Inputs */}
+              {/* Allocation Sliders */}
               <div className="flex flex-col space-y-4 max-h-[42vh] overflow-y-auto pr-1 no-scrollbar">
                 {/* Needs envelope */}
-                <div className="bg-white border border-[#ECECEC] rounded-2xl p-4 flex flex-col space-y-2.5">
+                <div className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-2xl p-4 flex flex-col space-y-2.5">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-[#1E1E1E]">Needs (Food, Rent, Medical)</span>
-                    <span className="text-xs font-bold text-[#607567]">₹{allocNeeds.toLocaleString('en-IN')}</span>
+                    <span className="text-xs font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">Needs (Food, Rent, Medical)</span>
+                    <span className="text-xs font-bold text-[#607567] dark:text-[#8FAF9B]">₹{allocNeeds.toLocaleString('en-IN')}</span>
                   </div>
                   <input
                     type="range"
@@ -229,10 +228,10 @@ export default function PaydayWizard({ isOpen, onClose }: PaydayWizardProps) {
                 </div>
 
                 {/* Parents Support */}
-                <div className="bg-white border border-[#ECECEC] rounded-2xl p-4 flex flex-col space-y-2.5">
+                <div className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-2xl p-4 flex flex-col space-y-2.5">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-[#1E1E1E]">Parents Monthly Support</span>
-                    <span className="text-xs font-bold text-[#607567]">₹{allocParents.toLocaleString('en-IN')}</span>
+                    <span className="text-xs font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">Parents Monthly Support</span>
+                    <span className="text-xs font-bold text-[#607567] dark:text-[#8FAF9B]">₹{allocParents.toLocaleString('en-IN')}</span>
                   </div>
                   <input
                     type="range"
@@ -246,10 +245,10 @@ export default function PaydayWizard({ isOpen, onClose }: PaydayWizardProps) {
                 </div>
 
                 {/* Savings & Goals */}
-                <div className="bg-white border border-[#ECECEC] rounded-2xl p-4 flex flex-col space-y-2.5">
+                <div className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-2xl p-4 flex flex-col space-y-2.5">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-[#1E1E1E]">Savings & Goals</span>
-                    <span className="text-xs font-bold text-[#607567]">₹{allocSavings.toLocaleString('en-IN')}</span>
+                    <span className="text-xs font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">Savings & Goals</span>
+                    <span className="text-xs font-bold text-[#607567] dark:text-[#8FAF9B]">₹{allocSavings.toLocaleString('en-IN')}</span>
                   </div>
                   <input
                     type="range"
@@ -263,10 +262,10 @@ export default function PaydayWizard({ isOpen, onClose }: PaydayWizardProps) {
                 </div>
 
                 {/* Charity Sadaqah */}
-                <div className="bg-white border border-[#ECECEC] rounded-2xl p-4 flex flex-col space-y-2.5">
+                <div className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-2xl p-4 flex flex-col space-y-2.5">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-[#1E1E1E]">Charity (Sadaqah, Zakat)</span>
-                    <span className="text-xs font-bold text-[#607567]">₹{allocCharity.toLocaleString('en-IN')}</span>
+                    <span className="text-xs font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">Charity (Sadaqah, Zakat)</span>
+                    <span className="text-xs font-bold text-[#607567] dark:text-[#8FAF9B]">₹{allocCharity.toLocaleString('en-IN')}</span>
                   </div>
                   <input
                     type="range"
@@ -280,10 +279,10 @@ export default function PaydayWizard({ isOpen, onClose }: PaydayWizardProps) {
                 </div>
 
                 {/* Wants */}
-                <div className="bg-white border border-[#ECECEC] rounded-2xl p-4 flex flex-col space-y-2.5">
+                <div className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-2xl p-4 flex flex-col space-y-2.5">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-[#1E1E1E]">Personal Wants (Coffee, Shopping)</span>
-                    <span className="text-xs font-bold text-[#607567]">₹{allocWants.toLocaleString('en-IN')}</span>
+                    <span className="text-xs font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">Personal Wants (Coffee, Shopping)</span>
+                    <span className="text-xs font-bold text-[#607567] dark:text-[#8FAF9B]">₹{allocWants.toLocaleString('en-IN')}</span>
                   </div>
                   <input
                     type="range"
@@ -300,13 +299,15 @@ export default function PaydayWizard({ isOpen, onClose }: PaydayWizardProps) {
               {/* Actions navigation */}
               <div className="grid grid-cols-2 gap-4">
                 <button
+                  type="button"
                   onClick={handlePrevStep}
-                  className="py-4 rounded-2xl border border-[#ECECEC] bg-white text-[#757575] font-bold active:scale-98 transition-all flex items-center justify-center space-x-1"
+                  className="py-4 rounded-2xl border border-[#ECECEC] dark:border-[#2C322E] bg-white dark:bg-[#1E221E] text-[#757575] dark:text-[#9AA09C] font-bold active:scale-98 transition-all flex items-center justify-center space-x-1"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   <span>Back</span>
                 </button>
                 <button
+                  type="button"
                   onClick={handleNextStep}
                   disabled={remainingToAllocate !== 0}
                   className="py-4 rounded-2xl bg-[#607567] text-white font-bold hover:bg-[#8FAF9B] active:scale-98 transition-all flex items-center justify-center space-x-1 shadow-premium disabled:opacity-50 disabled:pointer-events-none"
@@ -321,54 +322,56 @@ export default function PaydayWizard({ isOpen, onClose }: PaydayWizardProps) {
           {/* STEP 3: Review Confirmation */}
           {step === 3 && (
             <motion.div
+              key="step3"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               className="flex flex-col space-y-5"
             >
-              <div className="bg-white border border-[#ECECEC] rounded-2xl p-5 shadow-sm flex flex-col space-y-4">
-                <h3 className="text-xs font-bold text-[#607567] tracking-wider uppercase border-b border-[#ECECEC] pb-2">PROVISION PLAN BREAKDOWN</h3>
+              <div className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-2xl p-5 shadow-sm flex flex-col space-y-4">
+                <h3 className="text-xs font-bold text-[#607567] dark:text-[#8FAF9B] tracking-wider uppercase border-b border-[#ECECEC] dark:border-[#2C322E] pb-2">PROVISION PLAN BREAKDOWN</h3>
                 
                 <div className="flex justify-between items-center text-xs font-medium">
-                  <span className="text-[#757575]">Needs Budget (Salary Acc)</span>
-                  <span className="text-[#1E1E1E] font-bold">₹{allocNeeds.toLocaleString('en-IN')}</span>
+                  <span className="text-[#757575] dark:text-[#9AA09C]">Needs Budget (Salary Acc)</span>
+                  <span className="text-[#1E1E1E] dark:text-[#F7F9F7] font-bold">₹{allocNeeds.toLocaleString('en-IN')}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs font-medium">
-                  <span className="text-[#757575]">Parents Support (Salary Acc)</span>
-                  <span className="text-[#1E1E1E] font-bold">₹{allocParents.toLocaleString('en-IN')}</span>
+                  <span className="text-[#757575] dark:text-[#9AA09C]">Parents Support (Salary Acc)</span>
+                  <span className="text-[#1E1E1E] dark:text-[#F7F9F7] font-bold">₹{allocParents.toLocaleString('en-IN')}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs font-medium">
-                  <span className="text-[#757575]">Savings Goal Deposit (Savings Acc)</span>
-                  <span className="text-[#1E1E1E] font-bold">₹{allocSavings.toLocaleString('en-IN')}</span>
+                  <span className="text-[#757575] dark:text-[#9AA09C]">Savings Goal Deposit (Savings Acc)</span>
+                  <span className="text-[#1E1E1E] dark:text-[#F7F9F7] font-bold">₹{allocSavings.toLocaleString('en-IN')}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs font-medium">
-                  <span className="text-[#757575]">Charity envelope (UPI)</span>
-                  <span className="text-[#1E1E1E] font-bold">₹{allocCharity.toLocaleString('en-IN')}</span>
+                  <span className="text-[#757575] dark:text-[#9AA09C]">Charity envelope (UPI)</span>
+                  <span className="text-[#1E1E1E] dark:text-[#F7F9F7] font-bold">₹{allocCharity.toLocaleString('en-IN')}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs font-medium">
-                  <span className="text-[#757575]">Personal Wants (UPI)</span>
-                  <span className="text-[#1E1E1E] font-bold">₹{allocWants.toLocaleString('en-IN')}</span>
+                  <span className="text-[#757575] dark:text-[#9AA09C]">Personal Wants (UPI)</span>
+                  <span className="text-[#1E1E1E] dark:text-[#F7F9F7] font-bold">₹{allocWants.toLocaleString('en-IN')}</span>
                 </div>
 
-                <div className="border-t border-dashed border-[#ECECEC] pt-3 flex justify-between items-center">
-                  <span className="text-xs font-bold text-[#1E1E1E]">Total Allocated</span>
+                <div className="border-t border-dashed border-[#ECECEC] dark:border-[#2C322E] pt-3 flex justify-between items-center">
+                  <span className="text-xs font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">Total Allocated</span>
                   <span className="text-sm font-black text-[#63A66F]">₹{totalAllocated.toLocaleString('en-IN')}</span>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <button
+                  type="button"
                   onClick={handlePrevStep}
-                  className="py-4 rounded-2xl border border-[#ECECEC] bg-white text-[#757575] font-bold active:scale-98 transition-all flex items-center justify-center space-x-1"
+                  className="py-4 rounded-2xl border border-[#ECECEC] dark:border-[#2C322E] bg-white dark:bg-[#1E221E] text-[#757575] dark:text-[#9AA09C] font-bold active:scale-98 transition-all flex items-center justify-center space-x-1"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   <span>Back</span>
                 </button>
                 <button
+                  type="button"
                   onClick={handleFinish}
                   className="py-4 rounded-2xl bg-[#63A66F] text-white font-bold hover:bg-[#607567] active:scale-98 transition-all flex items-center justify-center space-x-1.5 shadow-premium"
                 >
-                  <Check className="w-4 h-4" />
                   <span>Apply Allocations</span>
                 </button>
               </div>

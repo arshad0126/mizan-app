@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useMizanStore } from '@/store/useMizanStore';
 import { formatAmount } from '@/lib/utils';
-import { BookOpen, Calculator, Calendar, Heart, ShieldAlert, Sparkles, TrendingUp, HandHelping, Landmark } from 'lucide-react';
+import { Heart, ShieldAlert, HandHelping, Landmark } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export default function IslamicFinanceModule() {
@@ -19,9 +18,8 @@ export default function IslamicFinanceModule() {
   const [investments, setInvestments] = useState('15000');
   const [debts, setDebts] = useState('5000');
 
-  // Hardcoded rates for demo validation (standard averages)
-  const GOLD_RATE = 6500; // per gram
-  const SILVER_RATE = 80;  // per gram
+  const GOLD_RATE = 6500;
+  const SILVER_RATE = 80;
 
   const totalAssets = (Number(gold) * GOLD_RATE) + 
                       (Number(silver) * SILVER_RATE) + 
@@ -30,11 +28,7 @@ export default function IslamicFinanceModule() {
                       Number(investments);
   const netWealth = Math.max(0, totalAssets - Number(debts));
 
-  // Nisab calculations (85g Gold, 595g Silver)
-  const goldNisab = 85 * GOLD_RATE;   // ₹5,52,500
   const silverNisab = 595 * SILVER_RATE; // ₹47,600
-  
-  // Silver Nisab is standard for liquid assets/cash (increases charity beneficiary reach)
   const activeNisab = silverNisab;
   const isEligible = netWealth >= activeNisab;
   const zakatDue = isEligible ? netWealth * 0.025 : 0;
@@ -46,7 +40,6 @@ export default function IslamicFinanceModule() {
   const handlePayZakat = async () => {
     if (zakatDue <= 0) return;
     
-    // Choose first account to pay from
     await addTransaction({
       accountId: 'acc-1',
       type: 'sadaqah',
@@ -71,13 +64,13 @@ export default function IslamicFinanceModule() {
   return (
     <div className="flex flex-col space-y-6">
       {/* Tab Selectors */}
-      <div className="flex bg-[#ECECEC]/50 p-1 rounded-2xl">
+      <div className="flex bg-[#ECECEC]/50 dark:bg-[#2C322E]/40 p-1 rounded-2xl">
         <button
           onClick={() => setSubTab('sadaqah')}
           className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
             subTab === 'sadaqah'
-              ? 'bg-white text-[#1E1E1E] shadow-sm'
-              : 'text-[#757575] hover:text-[#1E1E1E]'
+              ? 'bg-white dark:bg-[#1E221E] text-[#1E1E1E] dark:text-[#F7F9F7] shadow-sm'
+              : 'text-[#757575] dark:text-[#9AA09C] hover:text-[#1E1E1E] dark:hover:text-[#F7F9F7]'
           }`}
         >
           <HandHelping className="w-4 h-4" />
@@ -87,8 +80,8 @@ export default function IslamicFinanceModule() {
           onClick={() => setSubTab('zakat')}
           className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
             subTab === 'zakat'
-              ? 'bg-white text-[#1E1E1E] shadow-sm'
-              : 'text-[#757575] hover:text-[#1E1E1E]'
+              ? 'bg-white dark:bg-[#1E221E] text-[#1E1E1E] dark:text-[#F7F9F7] shadow-sm'
+              : 'text-[#757575] dark:text-[#9AA09C] hover:text-[#1E1E1E] dark:hover:text-[#F7F9F7]'
           }`}
         >
           <Landmark className="w-4 h-4" />
@@ -99,11 +92,11 @@ export default function IslamicFinanceModule() {
       {subTab === 'sadaqah' ? (
         <div className="flex flex-col space-y-5">
           {/* Summary Box */}
-          <div className="bg-white border border-[#ECECEC] rounded-3xl p-5 shadow-sm flex items-center justify-between">
+          <div className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-3xl p-5 shadow-sm flex items-center justify-between">
             <div className="flex flex-col">
-              <span className="text-xxs font-bold text-[#757575] tracking-wider uppercase">TOTAL SADAQAH THIS MONTH</span>
-              <span className="text-2xl font-black text-[#607567] mt-1">{formatAmount(totalSadaqah, privacyMode)}</span>
-              <span className="text-xxs text-[#757575] mt-1">Goal: ₹5,000 / month</span>
+              <span className="text-xxs font-bold text-[#757575] dark:text-[#9AA09C] tracking-wider uppercase">TOTAL SADAQAH THIS MONTH</span>
+              <span className="text-2xl font-black text-[#607567] dark:text-[#8FAF9B] mt-1">{formatAmount(totalSadaqah, privacyMode)}</span>
+              <span className="text-xxs text-[#757575] dark:text-[#9AA09C] mt-1">Goal: ₹5,000 / month</span>
             </div>
             <div className="w-16 h-16 rounded-full bg-[#8FAF9B]/10 flex items-center justify-center text-[#8FAF9B]">
               <Heart className="w-8 h-8 fill-current" />
@@ -111,36 +104,36 @@ export default function IslamicFinanceModule() {
           </div>
 
           {/* Goal Progress Ring Sim */}
-          <div className="bg-white border border-[#ECECEC] rounded-3xl p-5 shadow-sm flex flex-col space-y-3">
+          <div className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-3xl p-5 shadow-sm flex flex-col space-y-3">
             <div className="flex justify-between items-center text-xs">
-              <span className="font-bold text-[#1E1E1E]">Monthly Charity Progress</span>
-              <span className="font-bold text-[#607567]">{Math.round((totalSadaqah / 5000) * 100)}% achieved</span>
+              <span className="font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">Monthly Charity Progress</span>
+              <span className="font-bold text-[#607567] dark:text-[#8FAF9B]">{Math.round((totalSadaqah / 5000) * 100)}% achieved</span>
             </div>
-            <div className="w-full h-3 bg-[#ECECEC] rounded-full overflow-hidden">
+            <div className="w-full h-3 bg-[#ECECEC] dark:bg-[#2C322E] rounded-full overflow-hidden">
               <div 
                 className="h-full bg-[#8FAF9B] rounded-full transition-all duration-500" 
                 style={{ width: `${Math.min(100, (totalSadaqah / 5000) * 100)}%` }}
               />
             </div>
-            <p className="text-xxs text-[#757575]">
+            <p className="text-xxs text-[#757575] dark:text-[#9AA09C]">
               "Sadaqah extinguishes sin as water extinguishes fire." (Tirmidhi)
             </p>
           </div>
 
           {/* History */}
           <div className="flex flex-col space-y-3">
-            <span className="text-xs font-bold text-[#607567] tracking-wider uppercase ml-1">SADAQAH LEDGER</span>
+            <span className="text-xs font-bold text-[#607567] dark:text-[#8FAF9B] tracking-wider uppercase ml-1">SADAQAH LEDGER</span>
             {sadaqahTxs.length === 0 ? (
-              <div className="bg-white border border-[#ECECEC] rounded-3xl p-6 text-center text-xs italic text-[#757575]">
+              <div className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-3xl p-6 text-center text-xs italic text-[#757575] dark:text-[#9AA09C]">
                 No Sadaqah transactions registered yet. Use the '+' action to record.
               </div>
             ) : (
               <div className="flex flex-col space-y-2">
                 {sadaqahTxs.map((t) => (
-                  <div key={t.id} className="bg-white border border-[#ECECEC] rounded-2xl p-4 flex justify-between items-center shadow-sm">
+                  <div key={t.id} className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-2xl p-4 flex justify-between items-center shadow-sm">
                     <div className="flex flex-col">
-                      <span className="text-xs font-bold text-[#1E1E1E]">{t.notes}</span>
-                      <span className="text-xxs text-[#757575] mt-0.5">{t.date}</span>
+                      <span className="text-xs font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">{t.notes}</span>
+                      <span className="text-xxs text-[#757575] dark:text-[#9AA09C] mt-0.5">{t.date}</span>
                     </div>
                     <span className="text-xs font-bold text-[#63A66F]">{formatAmount(t.amount, privacyMode)}</span>
                   </div>
@@ -152,71 +145,71 @@ export default function IslamicFinanceModule() {
       ) : (
         // ZAKAT CALCULATOR
         <div className="flex flex-col space-y-5">
-          <div className="bg-white border border-[#ECECEC] rounded-3xl p-5 shadow-sm flex flex-col space-y-4">
-            <div className="flex justify-between items-center border-b border-[#ECECEC] pb-3">
-              <span className="text-xs font-bold text-[#607567] tracking-wider uppercase">ASSET VALUATIONS (1448 AH)</span>
-              <span className="text-xxs font-bold text-[#757575]">Nisab threshold: ₹{activeNisab.toLocaleString('en-IN')}</span>
+          <div className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-3xl p-5 shadow-sm flex flex-col space-y-4">
+            <div className="flex justify-between items-center border-b border-[#ECECEC] dark:border-[#2C322E] pb-3">
+              <span className="text-xs font-bold text-[#607567] dark:text-[#8FAF9B] tracking-wider uppercase">ASSET VALUATIONS (1448 AH)</span>
+              <span className="text-xxs font-bold text-[#757575] dark:text-[#9AA09C]">Nisab threshold: ₹{activeNisab.toLocaleString('en-IN')}</span>
             </div>
 
             {/* Form grid */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col bg-[#F7F9F7] rounded-xl p-2.5">
-                <label className="text-xxs font-bold text-[#757575] mb-1">GOLD (GRAMS)</label>
+              <div className="flex flex-col bg-[#F7F9F7] dark:bg-[#121412] rounded-xl p-2.5">
+                <label className="text-xxs font-bold text-[#757575] dark:text-[#9AA09C] mb-1">GOLD (GRAMS)</label>
                 <input
                   type="number"
                   value={gold}
                   onChange={(e) => setGold(e.target.value)}
-                  className="bg-transparent outline-none border-none text-sm font-bold text-[#1E1E1E]"
+                  className="bg-transparent outline-none border-none text-sm font-bold text-[#1E1E1E] dark:text-[#F7F9F7]"
                 />
               </div>
 
-              <div className="flex flex-col bg-[#F7F9F7] rounded-xl p-2.5">
-                <label className="text-xxs font-bold text-[#757575] mb-1">SILVER (GRAMS)</label>
+              <div className="flex flex-col bg-[#F7F9F7] dark:bg-[#121412] rounded-xl p-2.5">
+                <label className="text-xxs font-bold text-[#757575] dark:text-[#9AA09C] mb-1">SILVER (GRAMS)</label>
                 <input
                   type="number"
                   value={silver}
                   onChange={(e) => setSilver(e.target.value)}
-                  className="bg-transparent outline-none border-none text-sm font-bold text-[#1E1E1E]"
+                  className="bg-transparent outline-none border-none text-sm font-bold text-[#1E1E1E] dark:text-[#F7F9F7]"
                 />
               </div>
 
-              <div className="flex flex-col bg-[#F7F9F7] rounded-xl p-2.5">
-                <label className="text-xxs font-bold text-[#757575] mb-1">LIQUID CASH (₹)</label>
+              <div className="flex flex-col bg-[#F7F9F7] dark:bg-[#121412] rounded-xl p-2.5">
+                <label className="text-xxs font-bold text-[#757575] dark:text-[#9AA09C] mb-1">LIQUID CASH (₹)</label>
                 <input
                   type="number"
                   value={cash}
                   onChange={(e) => setCash(e.target.value)}
-                  className="bg-transparent outline-none border-none text-sm font-bold text-[#1E1E1E]"
+                  className="bg-transparent outline-none border-none text-sm font-bold text-[#1E1E1E] dark:text-[#F7F9F7]"
                 />
               </div>
 
-              <div className="flex flex-col bg-[#F7F9F7] rounded-xl p-2.5">
-                <label className="text-xxs font-bold text-[#757575] mb-1">INVESTMENTS (₹)</label>
+              <div className="flex flex-col bg-[#F7F9F7] dark:bg-[#121412] rounded-xl p-2.5">
+                <label className="text-xxs font-bold text-[#757575] dark:text-[#9AA09C] mb-1">INVESTMENTS (₹)</label>
                 <input
                   type="number"
                   value={investments}
                   onChange={(e) => setInvestments(e.target.value)}
-                  className="bg-transparent outline-none border-none text-sm font-bold text-[#1E1E1E]"
+                  className="bg-transparent outline-none border-none text-sm font-bold text-[#1E1E1E] dark:text-[#F7F9F7]"
                 />
               </div>
 
-              <div className="flex flex-col bg-[#F7F9F7] rounded-xl p-2.5">
-                <label className="text-xxs font-bold text-[#757575] mb-1">BUSINESS ASSETS (₹)</label>
+              <div className="flex flex-col bg-[#F7F9F7] dark:bg-[#121412] rounded-xl p-2.5">
+                <label className="text-xxs font-bold text-[#757575] dark:text-[#9AA09C] mb-1">BUSINESS ASSETS (₹)</label>
                 <input
                   type="number"
                   value={businessAssets}
                   onChange={(e) => setBusinessAssets(e.target.value)}
-                  className="bg-transparent outline-none border-none text-sm font-bold text-[#1E1E1E]"
+                  className="bg-transparent outline-none border-none text-sm font-bold text-[#1E1E1E] dark:text-[#F7F9F7]"
                 />
               </div>
 
-              <div className="flex flex-col bg-[#F7F9F7] rounded-xl p-2.5">
-                <label className="text-xxs font-bold text-[#757575] mb-1">DEBTS & LIABILITIES (₹)</label>
+              <div className="flex flex-col bg-[#F7F9F7] dark:bg-[#121412] rounded-xl p-2.5">
+                <label className="text-xxs font-bold text-[#757575] dark:text-[#9AA09C] mb-1">DEBTS & LIABILITIES (₹)</label>
                 <input
                   type="number"
                   value={debts}
                   onChange={(e) => setDebts(e.target.value)}
-                  className="bg-transparent outline-none border-none text-sm font-bold text-[#1E1E1E]"
+                  className="bg-transparent outline-none border-none text-sm font-bold text-[#1E1E1E] dark:text-[#F7F9F7]"
                 />
               </div>
             </div>
