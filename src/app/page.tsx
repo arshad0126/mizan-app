@@ -4,6 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMizanStore } from '@/store/useMizanStore';
 import { formatAmount } from '@/lib/utils';
+import AnimatedCounter from '@/components/AnimatedCounter';
+import Header from '@/components/Header';
+import WealthCard from '@/components/WealthCard';
+import AccountSwiper from '@/components/AccountSwiper';
+import TransactionWizard from '@/components/TransactionWizard';
+import PaydayWizard from '@/components/PaydayWizard';
+import IslamicFinanceModule from '@/components/IslamicFinanceModule';
+import FinancialHealthScore from '@/components/FinancialHealthScore';
 import confetti from 'canvas-confetti';
 
 // Icons
@@ -19,23 +27,16 @@ import {
   TrendingUp,
   Heart,
   Sparkles,
-  BookmarkCheck,
-  Calendar,
-  Layers,
-  Sparkle,
   Smile,
   Sun,
-  Moon
+  Moon,
+  Trash2,
+  Lock,
+  User,
+  Trash,
+  Info,
+  Layers
 } from 'lucide-react';
-
-// Components
-import Header from '@/components/Header';
-import WealthCard from '@/components/WealthCard';
-import AccountSwiper from '@/components/AccountSwiper';
-import TransactionWizard from '@/components/TransactionWizard';
-import PaydayWizard from '@/components/PaydayWizard';
-import IslamicFinanceModule from '@/components/IslamicFinanceModule';
-import FinancialHealthScore from '@/components/FinancialHealthScore';
 
 export default function Dashboard() {
   const {
@@ -48,11 +49,61 @@ export default function Dashboard() {
     privacyMode,
     contributeToGoal,
     theme,
-    toggleTheme
+    toggleTheme,
+    // Dynamic settings CRUD actions
+    subscriptions,
+    addSubscription,
+    removeSubscription,
+    addAccount,
+    removeAccount,
+    addGoal,
+    removeGoal,
+    addBudgetEnvelope,
+    removeBudgetEnvelope,
+    updateSettings,
+    resetApp,
+    userName,
+    userPin,
+    autoLockDuration
   } = useMizanStore();
 
+  // Dialog control states
   const [txWizardOpen, setTxWizardOpen] = useState(false);
   const [paydayWizardOpen, setPaydayWizardOpen] = useState(false);
+  
+  // Custom creations states
+  const [accountModalOpen, setAccountModalOpen] = useState(false);
+  const [budgetModalOpen, setBudgetModalOpen] = useState(false);
+  const [goalModalOpen, setGoalModalOpen] = useState(false);
+  const [subModalOpen, setSubModalOpen] = useState(false);
+  
+  // Account Form
+  const [newAccName, setNewAccName] = useState('');
+  const [newAccType, setNewAccType] = useState<'salary' | 'savings' | 'upi' | 'cash' | 'investment' | 'credit'>('savings');
+  const [newAccBalance, setNewAccBalance] = useState('');
+  const [newAccColor, setNewAccColor] = useState('#8FAF9B');
+
+  // Budget Form
+  const [newBudgetName, setNewBudgetName] = useState('');
+  const [newBudgetLimit, setNewBudgetLimit] = useState('');
+
+  // Goal Form
+  const [newGoalTitle, setNewGoalTitle] = useState('');
+  const [newGoalTarget, setNewGoalTarget] = useState('');
+  const [newGoalTimeline, setNewGoalTimeline] = useState('');
+  const [newGoalCategory, setNewGoalCategory] = useState('Emergency');
+
+  // Subscription Form
+  const [newSubName, setNewSubName] = useState('');
+  const [newSubCost, setNewSubCost] = useState('');
+  const [newSubRenewal, setNewSubRenewal] = useState('');
+  const [newSubIcon, setNewSubIcon] = useState('☁️');
+
+  // Settings Edit states
+  const [editName, setEditName] = useState('');
+  const [editPin, setEditPin] = useState('');
+  const [editLockTimer, setEditLockTimer] = useState(60);
+  const [settingsStatusMsg, setSettingsStatusMsg] = useState('');
 
   // Goal contribution state
   const [goalContributionOpen, setGoalContributionOpen] = useState(false);
@@ -63,13 +114,15 @@ export default function Dashboard() {
   // Expandable transaction states in Timeline
   const [expandedTxId, setExpandedTxId] = useState<string | null>(null);
 
-  // Subscriptions mock list
-  const subscriptions = [
-    { name: 'iCloud Storage', cost: 75, icon: '☁️', renewal: '02 July' },
-    { name: 'ChatGPT Plus', cost: 1999, icon: '🤖', renewal: '10 July' },
-    { name: 'Netflix Premium', cost: 649, icon: '🎬', renewal: '18 July' },
-    { name: 'Masjid Support (Recur)', cost: 500, icon: '🕌', renewal: 'Weekly' },
-  ];
+  // Sync settings inputs when Profile loads
+  useEffect(() => {
+    if (activeTab === 'profile') {
+      setEditName(userName || '');
+      setEditPin(userPin || '');
+      setEditLockTimer(autoLockDuration || 60);
+      setSettingsStatusMsg('');
+    }
+  }, [activeTab, userName, userPin, autoLockDuration]);
 
   const totalSubMonthly = subscriptions.reduce((sum, s) => sum + s.cost, 0);
 
@@ -93,6 +146,8 @@ export default function Dashboard() {
       {/* View Switcher based on store active tab state */}
       <main className="flex-grow px-6 py-6 max-w-md mx-auto w-full">
         <AnimatePresence mode="wait">
+          
+          {/* HOME SCREEN */}
           {activeTab === 'home' && (
             <motion.div
               key="home"
@@ -101,7 +156,7 @@ export default function Dashboard() {
               exit={{ opacity: 0, x: 10 }}
               className="flex flex-col space-y-6"
             >
-              {/* Wealth Card & Wallet account Swiper */}
+              {/* Wealth Card */}
               <WealthCard />
 
               {/* Quick Action triggers */}
@@ -119,6 +174,18 @@ export default function Dashboard() {
                 >
                   <Sparkles className="w-4 h-4 text-[#AFC5B3]" />
                   <span>Payday wizard</span>
+                </button>
+              </div>
+
+              {/* Wallet Header & Add Account action */}
+              <div className="flex justify-between items-center -mb-4">
+                <div />
+                <button 
+                  onClick={() => setAccountModalOpen(true)}
+                  className="text-xxs font-bold text-[#8FAF9B] hover:text-[#607567] flex items-center space-x-1 pr-6"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Add Wallet</span>
                 </button>
               </div>
 
@@ -184,28 +251,44 @@ export default function Dashboard() {
                   <div className="flex flex-col">
                     <span className="text-xxs text-[#757575] dark:text-[#9AA09C] font-bold tracking-wider uppercase">SUBSCRIPTIONS</span>
                     <span className="text-xs text-[#1E1E1E] dark:text-[#F7F9F7] font-bold mt-0.5">
-                      Monthly Cost: {formatAmount(totalSubMonthly, privacyMode)}
+                      Monthly Cost: <AnimatedCounter value={totalSubMonthly} privacyMode={privacyMode} />
                     </span>
                   </div>
-                  <span className="text-xxs text-[#757575] dark:text-[#9AA09C] font-bold px-2 py-1 bg-[#F7F9F7] dark:bg-[#2C322E] rounded-lg">
-                    Yearly: {formatAmount(totalSubMonthly * 12, privacyMode)}
-                  </span>
+                  <button 
+                    onClick={() => setSubModalOpen(true)}
+                    className="text-xxs text-[#8FAF9B] font-bold px-2.5 py-1.5 border border-[#8FAF9B]/20 rounded-xl hover:bg-[#8FAF9B]/5 active:scale-95 transition-all"
+                  >
+                    + Add Subscription
+                  </button>
                 </div>
 
-                <div className="flex flex-col space-y-3">
-                  {subscriptions.slice(0, 3).map((sub, i) => (
-                    <div key={i} className="flex justify-between items-center text-xs font-semibold">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm">{sub.icon}</span>
-                        <span className="text-[#1E1E1E] dark:text-[#F7F9F7]">{sub.name}</span>
+                {subscriptions.length === 0 ? (
+                  <p className="text-xs text-[#757575] dark:text-[#9AA09C] italic py-2 text-center">No subscriptions configured</p>
+                ) : (
+                  <div className="flex flex-col space-y-3.5">
+                    {subscriptions.map((sub) => (
+                      <div key={sub.id} className="flex justify-between items-center text-xs font-semibold group">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm">{sub.icon}</span>
+                          <div className="flex flex-col">
+                            <span className="text-[#1E1E1E] dark:text-[#F7F9F7]">{sub.name}</span>
+                            <span className="text-[10px] text-[#757575] dark:text-[#9AA09C] font-medium">{sub.renewal}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <span className="text-[#1E1E1E] dark:text-[#F7F9F7]">{formatAmount(sub.cost, privacyMode)}</span>
+                          <button
+                            onClick={() => removeSubscription(sub.id)}
+                            className="text-[#757575] hover:text-[#D66C6C] active:scale-95 transition-colors p-1"
+                            title="Remove"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex flex-col items-end">
-                        <span className="text-[#1E1E1E] dark:text-[#F7F9F7]">{formatAmount(sub.cost, privacyMode)}</span>
-                        <span className="text-xxs text-[#757575] dark:text-[#9AA09C] font-medium">{sub.renewal}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
@@ -220,93 +303,95 @@ export default function Dashboard() {
               className="flex flex-col space-y-5"
             >
               <div className="flex flex-col px-1">
-                <span className="text-xxs text-[#757575] dark:text-[#9AA09C] font-bold tracking-widest uppercase">CHRONOLOGICAL STORY</span>
-                <h2 className="text-lg font-bold text-[#1E1E1E] dark:text-[#F7F9F7] mt-0.5">Financial journal</h2>
+                <span className="text-xxs text-[#757575] dark:text-[#9AA09C] font-bold tracking-widest uppercase">FINANCIAL LEDGER</span>
+                <h2 className="text-lg font-bold text-[#1E1E1E] dark:text-[#F7F9F7] mt-0.5">Transactions history</h2>
               </div>
 
               {transactions.length === 0 ? (
-                <p className="text-center italic text-xs text-[#757575] dark:text-[#9AA09C] py-8 bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-3xl">No transactions found. Add some transactions to begin your timeline story.</p>
+                <div className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-3xl p-12 text-center text-xs italic text-[#757575] dark:text-[#9AA09C]">
+                  No records to display yet. Complete a Payday setup or add manual transactions to populate.
+                </div>
               ) : (
-                <div className="relative border-l border-[#ECECEC] dark:border-[#2C322E] pl-5 ml-3.5 space-y-6">
+                <div className="flex flex-col space-y-3">
                   {transactions.map((tx) => {
                     const isExpanded = expandedTxId === tx.id;
-                    const isSadaqah = tx.type === 'sadaqah';
+                    const accName = accounts.find(a => a.id === tx.accountId)?.name || 'Wallet';
                     
                     return (
-                      <motion.div 
-                        key={tx.id} 
-                        layout 
-                        className="relative"
+                      <motion.div
+                        key={tx.id}
+                        layout
+                        className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-2xl overflow-hidden shadow-sm"
                       >
-                        {/* Timeline dot */}
-                        <div className={`absolute -left-[27px] top-1.5 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-[#121412] transition-all shadow-sm ${
-                          isSadaqah ? 'bg-[#8FAF9B]' : tx.type === 'income' ? 'bg-[#63A66F]' : 'bg-[#757575]'
-                        }`} />
-
-                        <div 
+                        <div
                           onClick={() => setExpandedTxId(isExpanded ? null : tx.id)}
-                          className={`bg-white dark:bg-[#1E221E] border rounded-2xl p-4 flex flex-col cursor-pointer hover:border-[#8FAF9B] transition-all shadow-sm ${
-                            isSadaqah ? 'border-[#8FAF9B]/40 bg-[#8FAF9B]/2' : 'border-[#ECECEC] dark:border-[#2C322E]'
-                          }`}
+                          className="p-4 flex justify-between items-center cursor-pointer hover:bg-[#F7F9F7] dark:hover:bg-[#121412] transition-colors"
                         >
-                          <div className="flex justify-between items-start">
-                            <div className="flex flex-col">
-                              <span className="text-xs font-bold text-[#1E1E1E] dark:text-[#F7F9F7] leading-tight">
-                                {tx.notes}
-                              </span>
-                              <div className="flex items-center space-x-1.5 mt-1">
-                                <span className={`text-xxs px-1.5 py-0.5 rounded border font-semibold ${getCategoryColor(tx.category)}`}>
-                                  {tx.category}
-                                </span>
-                                <span className="text-xxs text-[#757575] dark:text-[#9AA09C]">{tx.date}</span>
-                              </div>
+                          <div className="flex items-center space-x-3">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                              tx.type === 'income' ? 'bg-[#63A66F]/10 text-[#63A66F]' : 'bg-[#ECECEC] dark:bg-[#2C322E] text-[#1E1E1E] dark:text-[#F7F9F7]'
+                            }`}>
+                              {tx.type === 'income' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
                             </div>
+                            <div className="flex flex-col">
+                              <span className="text-xs font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">{tx.notes}</span>
+                              <span className="text-xxs text-[#757575] dark:text-[#9AA09C] mt-0.5">{tx.date}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            <span className={`text-xs font-bold px-1.5 py-0.5 rounded border ${getCategoryColor(tx.category)}`}>
+                              {tx.category}
+                            </span>
                             <span className={`text-xs font-black ${
                               tx.type === 'income' ? 'text-[#63A66F]' : 'text-[#1E1E1E] dark:text-[#F7F9F7]'
                             }`}>
                               {tx.type === 'income' ? '+' : '-'}{formatAmount(tx.amount, privacyMode)}
                             </span>
                           </div>
-
-                          {/* Expanded Journal entry */}
-                          <AnimatePresence>
-                            {isExpanded && (
-                              <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                exit={{ opacity: 0, height: 0 }}
-                                className="border-t border-[#ECECEC] dark:border-[#2C322E] mt-3 pt-3 flex flex-col space-y-3"
-                              >
-                                {tx.journal ? (
-                                  <div className="bg-[#F7F9F7] dark:bg-[#2C322E]/30 rounded-xl p-3 flex flex-col space-y-2 border border-[#ECECEC] dark:border-[#2C322E]">
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-xxs font-bold text-[#607567] dark:text-[#8FAF9B] flex items-center space-x-1">
-                                        <Heart className="w-3 h-3 text-[#8FAF9B] fill-current" />
-                                        <span>Journal Memory</span>
-                                      </span>
-                                    </div>
-                                    <p className="text-xs italic text-[#1E1E1E] dark:text-[#F7F9F7] font-medium leading-relaxed">
-                                      "{tx.journal.notes}"
-                                    </p>
-                                    {tx.journal.voiceUrl && (
-                                      <div className="flex items-center space-x-2 text-xxs text-[#757575] dark:text-[#9AA09C] border-t border-[#ECECEC] dark:border-[#2C322E] pt-2">
-                                        <span className="w-1.5 h-1.5 bg-[#8FAF9B] rounded-full animate-ping" />
-                                        <span>Attached Voice Memo Note (0:14)</span>
-                                      </div>
-                                    )}
-                                    {tx.journal.photoUrl && (
-                                      <div className="text-xxs text-[#757575] dark:text-[#9AA09C] flex items-center space-x-1">
-                                        <span>📎 Attached Receipt scan</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <p className="text-xxs text-[#757575] dark:text-[#9AA09C] italic">No journal entries written. Tap to add journal notes next time.</p>
-                                )}
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
                         </div>
+
+                        {/* Expandable Journal details */}
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="px-4 pb-4 border-t border-[#ECECEC] dark:border-[#2C322E] bg-[#F7F9F7]/40 dark:bg-[#121412]/30 pt-3"
+                            >
+                              <div className="grid grid-cols-2 gap-2 text-xxs font-semibold text-[#757575] dark:text-[#9AA09C] mb-3">
+                                <div>
+                                  <span>Account: </span>
+                                  <span className="text-[#1E1E1E] dark:text-[#F7F9F7]">{accName}</span>
+                                </div>
+                                <div>
+                                  <span>Type: </span>
+                                  <span className="text-[#1E1E1E] dark:text-[#F7F9F7] uppercase">{tx.type}</span>
+                                </div>
+                              </div>
+
+                              {tx.journal ? (
+                                <div className="p-3 bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-xl flex flex-col space-y-2">
+                                  <span className="text-[10px] font-bold text-[#8FAF9B] tracking-wider uppercase flex items-center">
+                                    <Smile className="w-3.5 h-3.5 mr-1 fill-[#8FAF9B]/20" />
+                                    <span>Reflection Journal</span>
+                                  </span>
+                                  <p className="text-xxs italic text-[#1E1E1E] dark:text-[#F7F9F7] leading-relaxed">
+                                    "{tx.journal.notes}"
+                                  </p>
+                                  {tx.journal.photoUrl && (
+                                    <div className="text-[10px] text-[#607567] dark:text-[#8FAF9B] font-bold flex items-center bg-[#8FAF9B]/10 rounded-lg p-1.5">
+                                      📸 Photo attachment verified locally
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <p className="text-xxs text-[#757575] dark:text-[#9AA09C] italic">No reflection journal notes written for this transaction.</p>
+                              )}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </motion.div>
                     );
                   })}
@@ -324,20 +409,40 @@ export default function Dashboard() {
               exit={{ opacity: 0, x: 10 }}
               className="flex flex-col space-y-5"
             >
-              <div className="flex flex-col px-1">
-                <span className="text-xxs text-[#757575] dark:text-[#9AA09C] font-bold tracking-widest uppercase">ZERO-BASED ENVELOPES</span>
-                <h2 className="text-lg font-bold text-[#1E1E1E] dark:text-[#F7F9F7] mt-0.5">Budget allocations</h2>
+              <div className="flex justify-between items-center px-1">
+                <div className="flex flex-col">
+                  <span className="text-xxs text-[#757575] dark:text-[#9AA09C] font-bold tracking-widest uppercase">ZERO-BASED ENVELOPES</span>
+                  <h2 className="text-lg font-bold text-[#1E1E1E] dark:text-[#F7F9F7] mt-0.5">Budget allocations</h2>
+                </div>
+                <button 
+                  onClick={() => setBudgetModalOpen(true)}
+                  className="text-xxs font-bold text-[#8FAF9B] border border-[#8FAF9B]/20 rounded-xl px-2.5 py-1.5 hover:bg-[#8FAF9B]/5 active:scale-95 transition-all"
+                >
+                  + Add Envelope
+                </button>
               </div>
 
               <div className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-3xl p-5 shadow-sm flex flex-col space-y-4">
                 {budgets.map((b) => {
                   const percent = b.allocated > 0 ? (b.spent / b.allocated) * 100 : 0;
                   const isOver = b.spent > b.allocated;
+                  const isDefaultEnvelope = ['Needs', 'Wants', 'Parents', 'Savings', 'Charity'].includes(b.category);
                   
                   return (
                     <div key={b.category} className="flex flex-col space-y-2 border-b border-[#ECECEC] dark:border-[#2C322E] last:border-none pb-4 last:pb-0">
                       <div className="flex justify-between items-center text-xs font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">
-                        <span>{b.category}</span>
+                        <div className="flex items-center space-x-2">
+                          <span>{b.category}</span>
+                          {!isDefaultEnvelope && (
+                            <button
+                              onClick={() => removeBudgetEnvelope(b.category)}
+                              className="text-[#757575] hover:text-rose-500 transition-colors"
+                              title="Delete Envelope"
+                            >
+                              <Trash className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
                         <div className="flex items-center space-x-2">
                           {b.allocated > 0 && (
                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
@@ -386,56 +491,83 @@ export default function Dashboard() {
               exit={{ opacity: 0, x: 10 }}
               className="flex flex-col space-y-5"
             >
-              <div className="flex flex-col px-1">
-                <span className="text-xxs text-[#757575] dark:text-[#9AA09C] font-bold tracking-widest uppercase">INTENTIONAL PORTFOLIOS</span>
-                <h2 className="text-lg font-bold text-[#1E1E1E] dark:text-[#F7F9F7] mt-0.5">Active goals</h2>
+              <div className="flex justify-between items-center px-1">
+                <div className="flex flex-col">
+                  <span className="text-xxs text-[#757575] dark:text-[#9AA09C] font-bold tracking-widest uppercase">INTENTIONAL PORTFOLIOS</span>
+                  <h2 className="text-lg font-bold text-[#1E1E1E] dark:text-[#F7F9F7] mt-0.5">Active goals</h2>
+                </div>
+                <button 
+                  onClick={() => setGoalModalOpen(true)}
+                  className="text-xxs font-bold text-[#8FAF9B] border border-[#8FAF9B]/20 rounded-xl px-2.5 py-1.5 hover:bg-[#8FAF9B]/5 active:scale-95 transition-all"
+                >
+                  + Add Goal
+                </button>
               </div>
 
-              {goals.map((goal) => {
-                const percent = Math.min(100, (goal.saved / goal.target) * 100);
-                const remaining = Math.max(0, goal.target - goal.saved);
-                
-                return (
-                  <div key={goal.id} className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-3xl p-5 shadow-sm flex flex-col space-y-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex flex-col">
-                        <h3 className="text-sm font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">{goal.title}</h3>
-                        <span className="text-xxs text-[#757575] dark:text-[#9AA09C] font-medium mt-0.5">Target: {goal.timeline}</span>
+              {goals.length === 0 ? (
+                <div className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-3xl p-12 text-center text-xs italic text-[#757575] dark:text-[#9AA09C]">
+                  No saving goals set. Tap '+ Add Goal' to configure one.
+                </div>
+              ) : (
+                goals.map((goal) => {
+                  const percent = Math.min(100, (goal.saved / goal.target) * 100);
+                  const remaining = Math.max(0, goal.target - goal.saved);
+                  
+                  return (
+                    <div key={goal.id} className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-3xl p-5 shadow-sm flex flex-col space-y-4">
+                      <div className="flex justify-between items-start">
+                        <div className="flex flex-col">
+                          <div className="flex items-center space-x-2">
+                            <h3 className="text-sm font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">{goal.title}</h3>
+                            <button
+                              onClick={() => removeGoal(goal.id)}
+                              className="text-[#757575] hover:text-rose-500 transition-colors p-1"
+                              title="Delete Goal"
+                            >
+                              <Trash className="w-3 h-3" />
+                            </button>
+                          </div>
+                          <span className="text-xxs text-[#757575] dark:text-[#9AA09C] font-medium mt-0.5">Target: {goal.timeline}</span>
+                        </div>
+                        <span className="text-xs font-black text-[#8FAF9B]">{Math.round(percent)}%</span>
                       </div>
-                      <span className="text-xs font-black text-[#8FAF9B]">{Math.round(percent)}%</span>
-                    </div>
 
-                    <div className="w-full h-2 bg-[#F7F9F7] dark:bg-[#121412] rounded-full overflow-hidden border border-[#ECECEC] dark:border-[#2C322E]">
-                      <div 
-                        className="h-full bg-[#8FAF9B] rounded-full transition-all duration-300"
-                        style={{ width: `${percent}%` }}
-                      />
-                    </div>
-
-                    <div className="flex justify-between items-center text-xs">
-                      <div className="flex flex-col">
-                        <span className="text-xxs text-[#757575] dark:text-[#9AA09C]">Saved</span>
-                        <span className="font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">{formatAmount(goal.saved, privacyMode)}</span>
+                      <div className="w-full h-2 bg-[#F7F9F7] dark:bg-[#121412] rounded-full overflow-hidden border border-[#ECECEC] dark:border-[#2C322E]">
+                        <div 
+                          className="h-full bg-[#8FAF9B] rounded-full transition-all duration-300"
+                          style={{ width: `${percent}%` }}
+                        />
                       </div>
-                      
-                      <div className="flex flex-col items-end">
-                        <span className="text-xxs text-[#757575] dark:text-[#9AA09C]">Remaining</span>
-                        <span className="font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">{formatAmount(remaining, privacyMode)}</span>
-                      </div>
-                    </div>
 
-                    <button
-                      onClick={() => {
-                        setSelectedGoalId(goal.id);
-                        setGoalContributionOpen(true);
-                      }}
-                      className="w-full py-2.5 rounded-xl border border-[#ECECEC] dark:border-[#2C322E] text-[#607567] dark:text-[#8FAF9B] text-xs font-bold bg-[#F7F9F7] dark:bg-[#121412] active:scale-97 hover:bg-white dark:hover:bg-[#1E221E] hover:border-[#8FAF9B] transition-all"
-                    >
-                      Allocate Contribution
-                    </button>
-                  </div>
-                );
-              })}
+                      <div className="flex justify-between items-center text-xs">
+                        <div className="flex flex-col">
+                          <span className="text-xxs text-[#757575] dark:text-[#9AA09C]">Saved</span>
+                          <span className="font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">
+                            <AnimatedCounter value={goal.saved} privacyMode={privacyMode} />
+                          </span>
+                        </div>
+                        
+                        <div className="flex flex-col items-end">
+                          <span className="text-xxs text-[#757575] dark:text-[#9AA09C]">Remaining</span>
+                          <span className="font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">
+                            <AnimatedCounter value={remaining} privacyMode={privacyMode} />
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setSelectedGoalId(goal.id);
+                          setGoalContributionOpen(true);
+                        }}
+                        className="w-full py-2.5 rounded-xl border border-[#ECECEC] dark:border-[#2C322E] text-[#607567] dark:text-[#8FAF9B] text-xs font-bold bg-[#F7F9F7] dark:bg-[#121412] active:scale-97 hover:bg-white dark:hover:bg-[#1E221E] hover:border-[#8FAF9B] transition-all"
+                      >
+                        Allocate Contribution
+                      </button>
+                    </div>
+                  );
+                })
+              )}
 
               {/* Goal Contribution Modal */}
               <AnimatePresence>
@@ -528,23 +660,100 @@ export default function Dashboard() {
             >
               <FinancialHealthScore />
 
+              {/* Settings Configuration form */}
               <div className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-3xl p-5 shadow-sm flex flex-col space-y-4">
-                <span className="text-xs font-bold text-[#607567] dark:text-[#8FAF9B] tracking-wider uppercase border-b border-[#ECECEC] dark:border-[#2C322E] pb-2">SETTINGS</span>
+                <span className="text-xs font-bold text-[#607567] dark:text-[#8FAF9B] tracking-wider uppercase border-b border-[#ECECEC] dark:border-[#2C322E] pb-2">PROFILE SETTINGS</span>
+                
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!editName || !editPin) return;
+                  await updateSettings(editName, editPin, Number(editLockTimer));
+                  setSettingsStatusMsg('Profile settings updated successfully!');
+                  setTimeout(() => setSettingsStatusMsg(''), 3000);
+                }} className="flex flex-col space-y-4">
+                  
+                  <div className="flex flex-col bg-[#F7F9F7] dark:bg-[#121412] rounded-xl p-2.5">
+                    <label className="text-[10px] text-[#757575] font-bold uppercase mb-1">USERNAME</label>
+                    <input 
+                      type="text" 
+                      value={editName} 
+                      onChange={(e) => setEditName(e.target.value)} 
+                      className="bg-transparent outline-none border-none text-xs font-bold text-[#1E1E1E] dark:text-[#F7F9F7]" 
+                    />
+                  </div>
+
+                  <div className="flex flex-col bg-[#F7F9F7] dark:bg-[#121412] rounded-xl p-2.5">
+                    <label className="text-[10px] text-[#757575] font-bold uppercase mb-1">SECURITY PIN</label>
+                    <input 
+                      type="text" 
+                      maxLength={4}
+                      value={editPin} 
+                      onChange={(e) => setEditPin(e.target.value.replace(/\D/g, ''))} 
+                      className="bg-transparent outline-none border-none text-xs font-bold text-[#1E1E1E] dark:text-[#F7F9F7]" 
+                    />
+                  </div>
+
+                  <div className="flex flex-col bg-[#F7F9F7] dark:bg-[#121412] rounded-xl p-2.5">
+                    <label className="text-[10px] text-[#757575] font-bold uppercase mb-1">AUTO-LOCK DELAY</label>
+                    <select
+                      value={editLockTimer}
+                      onChange={(e) => setEditLockTimer(Number(e.target.value))}
+                      className="bg-transparent outline-none text-xs font-bold text-[#1E1E1E] dark:text-[#F7F9F7] border-none"
+                    >
+                      <option value={15}>15 Seconds</option>
+                      <option value={60}>1 Minute</option>
+                      <option value={300}>5 Minutes</option>
+                      <option value={99999}>Never Lock</option>
+                    </select>
+                  </div>
+
+                  {settingsStatusMsg && (
+                    <div className="text-xxs text-[#63A66F] font-bold text-center bg-[#63A66F]/10 rounded-xl p-2.5 animate-in fade-in duration-200">
+                      {settingsStatusMsg}
+                    </div>
+                  )}
+
+                  <button 
+                    type="submit" 
+                    className="w-full py-3 bg-[#607567] text-white text-xs font-bold rounded-xl active:scale-95 transition-all shadow-sm"
+                  >
+                    Save Settings
+                  </button>
+                </form>
+              </div>
+
+              {/* Storage & Utilities panel */}
+              <div className="bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-3xl p-5 shadow-sm flex flex-col space-y-4">
+                <span className="text-xs font-bold text-[#607567] dark:text-[#8FAF9B] tracking-wider uppercase border-b border-[#ECECEC] dark:border-[#2C322E] pb-2">UTILITIES</span>
                 
                 <div className="flex justify-between items-center text-xs font-semibold">
-                  <span className="text-[#1E1E1E] dark:text-[#F7F9F7]">Biometric Face ID Lock</span>
+                  <span className="text-[#1E1E1E] dark:text-[#F7F9F7]">Biometric Bypass</span>
                   <span className="text-xs text-[#8FAF9B]">Configured</span>
                 </div>
                 
                 <div className="flex justify-between items-center text-xs font-semibold">
-                  <span className="text-[#1E1E1E] dark:text-[#F7F9F7]">Offline Cache sync</span>
+                  <span className="text-[#1E1E1E] dark:text-[#F7F9F7]">Cache Storage</span>
                   <span className="text-xs text-[#63A66F] font-bold">Synchronized</span>
                 </div>
 
                 <div className="flex justify-between items-center text-xs font-semibold">
-                  <span className="text-[#1E1E1E] dark:text-[#F7F9F7]">Storage engine</span>
+                  <span className="text-[#1E1E1E] dark:text-[#F7F9F7]">Storage Engine</span>
                   <span className="text-[#757575] dark:text-[#9AA09C]">IndexedDB Local</span>
                 </div>
+
+                <div className="w-full h-px bg-[#ECECEC] dark:bg-[#2C322E] my-1" />
+
+                <button
+                  onClick={async () => {
+                    const confirmWipe = window.confirm('Are you sure you want to delete all local data? This will wipe your settings, accounts, and transactions permanently.');
+                    if (confirmWipe) {
+                      await resetApp();
+                    }
+                  }}
+                  className="w-full py-3 border border-rose-500/20 text-rose-500 hover:bg-rose-500/5 text-xs font-bold rounded-xl active:scale-95 transition-all"
+                >
+                  Reset Application (Wipe DB)
+                </button>
               </div>
             </motion.div>
           )}
@@ -637,23 +846,404 @@ export default function Dashboard() {
         </button>
       </nav>
 
-      {/* Transaction sheet Bottom drawers */}
+      {/* Transaction Entry Wizard Dialog Sheet */}
+      <TransactionWizard isOpen={txWizardOpen} onClose={() => setTxWizardOpen(false)} />
+
+      {/* Payday Wizard Dialog Sheet */}
+      <PaydayWizard isOpen={paydayWizardOpen} onClose={() => setPaydayWizardOpen(false)} />
+
+      {/* OVERLAY DIALOGS FOR CREATION FORMS */}
+      
+      {/* 1. Add Wallet Account Dialog */}
       <AnimatePresence>
-        {txWizardOpen && (
-          <TransactionWizard 
-            isOpen={txWizardOpen} 
-            onClose={() => setTxWizardOpen(false)} 
-          />
+        {accountModalOpen && (
+          <>
+            <div 
+              className="fixed inset-0 bg-black/45 backdrop-blur-sm z-45"
+              onClick={() => setAccountModalOpen(false)}
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              className="fixed bottom-0 left-0 right-0 bg-[#F7F9F7] dark:bg-[#1E221E] border-t border-[#ECECEC] dark:border-[#2C322E] rounded-t-[32px] p-6 z-50 safe-bottom"
+            >
+              <div className="flex justify-between items-center mb-4 border-b border-[#ECECEC] dark:border-[#2C322E] pb-3">
+                <h3 className="text-sm font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">Create New Account</h3>
+                <button 
+                  onClick={() => setAccountModalOpen(false)}
+                  className="text-xs font-bold text-[#757575] dark:text-[#9AA09C]"
+                >
+                  Cancel
+                </button>
+              </div>
+
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                if (!newAccName || !newAccBalance) return;
+                const id = 'acc-' + Math.random().toString(36).substring(2, 9);
+                await addAccount({
+                  id,
+                  name: newAccName,
+                  type: newAccType,
+                  balance: Number(newAccBalance),
+                  monthlyChange: 0,
+                  color: newAccColor
+                });
+                setNewAccName('');
+                setNewAccBalance('');
+                setAccountModalOpen(false);
+                confetti({ particleCount: 30, colors: ['#8FAF9B'] });
+              }} className="flex flex-col space-y-4">
+                
+                <div className="flex flex-col bg-white dark:bg-[#2C322E]/30 border border-[#ECECEC] dark:border-[#2C322E] rounded-xl p-3">
+                  <label className="text-[10px] text-[#757575] dark:text-[#9AA09C] font-bold uppercase mb-1">Account Name</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Crypto Wallet" 
+                    value={newAccName} 
+                    onChange={(e) => setNewAccName(e.target.value)} 
+                    required 
+                    className="bg-transparent outline-none font-bold text-xs text-[#1E1E1E] dark:text-[#F7F9F7]" 
+                  />
+                </div>
+
+                <div className="flex flex-col bg-white dark:bg-[#2C322E]/30 border border-[#ECECEC] dark:border-[#2C322E] rounded-xl p-3">
+                  <label className="text-[10px] text-[#757575] dark:text-[#9AA09C] font-bold uppercase mb-1">Starting Balance (₹)</label>
+                  <input 
+                    type="number" 
+                    placeholder="0" 
+                    value={newAccBalance} 
+                    onChange={(e) => setNewAccBalance(e.target.value)} 
+                    required 
+                    className="bg-transparent outline-none font-bold text-xs text-[#1E1E1E] dark:text-[#F7F9F7]" 
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col bg-white dark:bg-[#2C322E]/30 border border-[#ECECEC] dark:border-[#2C322E] rounded-xl p-3">
+                    <label className="text-[10px] text-[#757575] dark:text-[#9AA09C] font-bold uppercase mb-1">Account Type</label>
+                    <select 
+                      value={newAccType} 
+                      onChange={(e) => setNewAccType(e.target.value as any)} 
+                      className="bg-transparent outline-none text-xs font-bold text-[#1E1E1E] dark:text-[#F7F9F7] border-none"
+                    >
+                      <option value="salary" className="dark:bg-[#1E221E]">Salary</option>
+                      <option value="savings" className="dark:bg-[#1E221E]">Savings</option>
+                      <option value="upi" className="dark:bg-[#1E221E]">UPI Wallet</option>
+                      <option value="cash" className="dark:bg-[#1E221E]">Cash</option>
+                      <option value="investment" className="dark:bg-[#1E221E]">Investment</option>
+                      <option value="credit" className="dark:bg-[#1E221E]">Credit Card</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col bg-white dark:bg-[#2C322E]/30 border border-[#ECECEC] dark:border-[#2C322E] rounded-xl p-3">
+                    <label className="text-[10px] text-[#757575] dark:text-[#9AA09C] font-bold uppercase mb-1">Theme Color</label>
+                    <select 
+                      value={newAccColor} 
+                      onChange={(e) => setNewAccColor(e.target.value)} 
+                      className="bg-transparent outline-none text-xs font-bold text-[#1E1E1E] dark:text-[#F7F9F7] border-none"
+                    >
+                      <option value="#8FAF9B" className="dark:bg-[#1E221E]">Sage Green</option>
+                      <option value="#607567" className="dark:bg-[#1E221E]">Forest Green</option>
+                      <option value="#4A7C59" className="dark:bg-[#1E221E]">Emerald</option>
+                      <option value="#D5A349" className="dark:bg-[#1E221E]">Amber Gold</option>
+                      <option value="#1E221E" className="dark:bg-[#1E221E]">Charcoal</option>
+                      <option value="#D66C6C" className="dark:bg-[#1E221E]">Coral Red</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button 
+                  type="submit" 
+                  className="w-full py-3.5 bg-[#8FAF9B] text-white font-bold text-xs rounded-xl active:scale-95 transition-all shadow-md"
+                >
+                  Create Wallet
+                </button>
+              </form>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
-      {/* Payday Allocation drawer */}
+      {/* 2. Add Budget Envelope Modal */}
       <AnimatePresence>
-        {paydayWizardOpen && (
-          <PaydayWizard 
-            isOpen={paydayWizardOpen} 
-            onClose={() => setPaydayWizardOpen(false)} 
-          />
+        {budgetModalOpen && (
+          <>
+            <div 
+              className="fixed inset-0 bg-black/45 backdrop-blur-sm z-45"
+              onClick={() => setBudgetModalOpen(false)}
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              className="fixed bottom-0 left-0 right-0 bg-[#F7F9F7] dark:bg-[#1E221E] border-t border-[#ECECEC] dark:border-[#2C322E] rounded-t-[32px] p-6 z-50 safe-bottom"
+            >
+              <div className="flex justify-between items-center mb-4 border-b border-[#ECECEC] dark:border-[#2C322E] pb-3">
+                <h3 className="text-sm font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">Add Custom Budget Envelope</h3>
+                <button 
+                  onClick={() => setBudgetModalOpen(false)}
+                  className="text-xs font-bold text-[#757575] dark:text-[#9AA09C]"
+                >
+                  Cancel
+                </button>
+              </div>
+
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                if (!newBudgetName || !newBudgetLimit) return;
+                await addBudgetEnvelope(newBudgetName.trim(), Number(newBudgetLimit));
+                setNewBudgetName('');
+                setNewBudgetLimit('');
+                setBudgetModalOpen(false);
+                confetti({ particleCount: 30, colors: ['#8FAF9B'] });
+              }} className="flex flex-col space-y-4">
+                
+                <div className="flex flex-col bg-white dark:bg-[#2C322E]/30 border border-[#ECECEC] dark:border-[#2C322E] rounded-xl p-3">
+                  <label className="text-[10px] text-[#757575] dark:text-[#9AA09C] font-bold uppercase mb-1">Envelope Name</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Wife Support" 
+                    value={newBudgetName} 
+                    onChange={(e) => setNewBudgetName(e.target.value)} 
+                    required 
+                    className="bg-transparent outline-none font-bold text-xs text-[#1E1E1E] dark:text-[#F7F9F7]" 
+                  />
+                </div>
+
+                <div className="flex flex-col bg-white dark:bg-[#2C322E]/30 border border-[#ECECEC] dark:border-[#2C322E] rounded-xl p-3">
+                  <label className="text-[10px] text-[#757575] dark:text-[#9AA09C] font-bold uppercase mb-1">Allocated Target (₹)</label>
+                  <input 
+                    type="number" 
+                    placeholder="0" 
+                    value={newBudgetLimit} 
+                    onChange={(e) => setNewBudgetLimit(e.target.value)} 
+                    required 
+                    className="bg-transparent outline-none font-bold text-xs text-[#1E1E1E] dark:text-[#F7F9F7]" 
+                  />
+                </div>
+
+                <button 
+                  type="submit" 
+                  className="w-full py-3.5 bg-[#8FAF9B] text-white font-bold text-xs rounded-xl active:scale-95 transition-all shadow-md"
+                >
+                  Create Envelope
+                </button>
+              </form>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* 3. Add Goal Modal */}
+      <AnimatePresence>
+        {goalModalOpen && (
+          <>
+            <div 
+              className="fixed inset-0 bg-black/45 backdrop-blur-sm z-45"
+              onClick={() => setGoalModalOpen(false)}
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              className="fixed bottom-0 left-0 right-0 bg-[#F7F9F7] dark:bg-[#1E221E] border-t border-[#ECECEC] dark:border-[#2C322E] rounded-t-[32px] p-6 z-50 safe-bottom"
+            >
+              <div className="flex justify-between items-center mb-4 border-b border-[#ECECEC] dark:border-[#2C322E] pb-3">
+                <h3 className="text-sm font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">Create Custom Goal</h3>
+                <button 
+                  onClick={() => setGoalModalOpen(false)}
+                  className="text-xs font-bold text-[#757575] dark:text-[#9AA09C]"
+                >
+                  Cancel
+                </button>
+              </div>
+
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                if (!newGoalTitle || !newGoalTarget || !newGoalTimeline) return;
+                await addGoal({
+                  title: newGoalTitle.trim(),
+                  target: Number(newGoalTarget),
+                  saved: 0,
+                  category: newGoalCategory,
+                  timeline: newGoalTimeline.trim(),
+                  icon: 'Target'
+                });
+                setNewGoalTitle('');
+                setNewGoalTarget('');
+                setNewGoalTimeline('');
+                setGoalModalOpen(false);
+                confetti({ particleCount: 30, colors: ['#8FAF9B'] });
+              }} className="flex flex-col space-y-4">
+                
+                <div className="flex flex-col bg-white dark:bg-[#2C322E]/30 border border-[#ECECEC] dark:border-[#2C322E] rounded-xl p-3">
+                  <label className="text-[10px] text-[#757575] dark:text-[#9AA09C] font-bold uppercase mb-1">Goal Portfolio Title</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Umrah Trip" 
+                    value={newGoalTitle} 
+                    onChange={(e) => setNewGoalTitle(e.target.value)} 
+                    required 
+                    className="bg-transparent outline-none font-bold text-xs text-[#1E1E1E] dark:text-[#F7F9F7]" 
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col bg-white dark:bg-[#2C322E]/30 border border-[#ECECEC] dark:border-[#2C322E] rounded-xl p-3">
+                    <label className="text-[10px] text-[#757575] dark:text-[#9AA09C] font-bold uppercase mb-1">Target Cost (₹)</label>
+                    <input 
+                      type="number" 
+                      placeholder="400000" 
+                      value={newGoalTarget} 
+                      onChange={(e) => setNewGoalTarget(e.target.value)} 
+                      required 
+                      className="bg-transparent outline-none font-bold text-xs text-[#1E1E1E] dark:text-[#F7F9F7]" 
+                    />
+                  </div>
+                  <div className="flex flex-col bg-white dark:bg-[#2C322E]/30 border border-[#ECECEC] dark:border-[#2C322E] rounded-xl p-3">
+                    <label className="text-[10px] text-[#757575] dark:text-[#9AA09C] font-bold uppercase mb-1">Target Timeline</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. December 2027" 
+                      value={newGoalTimeline} 
+                      onChange={(e) => setNewGoalTimeline(e.target.value)} 
+                      required 
+                      className="bg-transparent outline-none font-bold text-xs text-[#1E1E1E] dark:text-[#F7F9F7]" 
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col bg-white dark:bg-[#2C322E]/30 border border-[#ECECEC] dark:border-[#2C322E] rounded-xl p-3">
+                  <label className="text-[10px] text-[#757575] dark:text-[#9AA09C] font-bold uppercase mb-1">Category</label>
+                  <select 
+                    value={newGoalCategory} 
+                    onChange={(e) => setNewGoalCategory(e.target.value)} 
+                    className="bg-transparent outline-none text-xs font-bold text-[#1E1E1E] dark:text-[#F7F9F7] border-none"
+                  >
+                    <option value="Hajj" className="dark:bg-[#1E221E]">Hajj</option>
+                    <option value="Umrah" className="dark:bg-[#1E221E]">Umrah</option>
+                    <option value="Emergency" className="dark:bg-[#1E221E]">Emergency</option>
+                    <option value="Savings" className="dark:bg-[#1E221E]">Savings</option>
+                    <option value="Other" className="dark:bg-[#1E221E]">Other</option>
+                  </select>
+                </div>
+
+                <button 
+                  type="submit" 
+                  className="w-full py-3.5 bg-[#8FAF9B] text-white font-bold text-xs rounded-xl active:scale-95 transition-all shadow-md"
+                >
+                  Create Goal
+                </button>
+              </form>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* 4. Add Subscription Modal */}
+      <AnimatePresence>
+        {subModalOpen && (
+          <>
+            <div 
+              className="fixed inset-0 bg-black/45 backdrop-blur-sm z-45"
+              onClick={() => setSubModalOpen(false)}
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              className="fixed bottom-0 left-0 right-0 bg-[#F7F9F7] dark:bg-[#1E221E] border-t border-[#ECECEC] dark:border-[#2C322E] rounded-t-[32px] p-6 z-50 safe-bottom"
+            >
+              <div className="flex justify-between items-center mb-4 border-b border-[#ECECEC] dark:border-[#2C322E] pb-3">
+                <h3 className="text-sm font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">Add Subscription</h3>
+                <button 
+                  onClick={() => setSubModalOpen(false)}
+                  className="text-xs font-bold text-[#757575] dark:text-[#9AA09C]"
+                >
+                  Cancel
+                </button>
+              </div>
+
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                if (!newSubName || !newSubCost || !newSubRenewal) return;
+                await addSubscription({
+                  name: newSubName.trim(),
+                  cost: Number(newSubCost),
+                  renewal: newSubRenewal.trim(),
+                  icon: newSubIcon
+                });
+                setNewSubName('');
+                setNewSubCost('');
+                setNewSubRenewal('');
+                setSubModalOpen(false);
+                confetti({ particleCount: 30, colors: ['#8FAF9B'] });
+              }} className="flex flex-col space-y-4">
+                
+                <div className="flex flex-col bg-white dark:bg-[#2C322E]/30 border border-[#ECECEC] dark:border-[#2C322E] rounded-xl p-3">
+                  <label className="text-[10px] text-[#757575] dark:text-[#9AA09C] font-bold uppercase mb-1">Subscription Name</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Netflix" 
+                    value={newSubName} 
+                    onChange={(e) => setNewSubName(e.target.value)} 
+                    required 
+                    className="bg-transparent outline-none font-bold text-xs text-[#1E1E1E] dark:text-[#F7F9F7]" 
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col bg-white dark:bg-[#2C322E]/30 border border-[#ECECEC] dark:border-[#2C322E] rounded-xl p-3">
+                    <label className="text-[10px] text-[#757575] dark:text-[#9AA09C] font-bold uppercase mb-1">Monthly Cost (₹)</label>
+                    <input 
+                      type="number" 
+                      placeholder="199" 
+                      value={newSubCost} 
+                      onChange={(e) => setNewSubCost(e.target.value)} 
+                      required 
+                      className="bg-transparent outline-none font-bold text-xs text-[#1E1E1E] dark:text-[#F7F9F7]" 
+                    />
+                  </div>
+                  <div className="flex flex-col bg-white dark:bg-[#2C322E]/30 border border-[#ECECEC] dark:border-[#2C322E] rounded-xl p-3">
+                    <label className="text-[10px] text-[#757575] dark:text-[#9AA09C] font-bold uppercase mb-1">Renewal Cycle (e.g. 10 July)</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. 15 July" 
+                      value={newSubRenewal} 
+                      onChange={(e) => setNewSubRenewal(e.target.value)} 
+                      required 
+                      className="bg-transparent outline-none font-bold text-xs text-[#1E1E1E] dark:text-[#F7F9F7]" 
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col bg-white dark:bg-[#2C322E]/30 border border-[#ECECEC] dark:border-[#2C322E] rounded-xl p-3">
+                  <label className="text-[10px] text-[#757575] dark:text-[#9AA09C] font-bold uppercase mb-1">Select Icon</label>
+                  <select 
+                    value={newSubIcon} 
+                    onChange={(e) => setNewSubIcon(e.target.value)} 
+                    className="bg-transparent outline-none text-xs font-bold text-[#1E1E1E] dark:text-[#F7F9F7] border-none"
+                  >
+                    <option value="☁️">☁️ Cloud Storage</option>
+                    <option value="🤖">🤖 Bot / ChatGPT AI</option>
+                    <option value="🎬">🎬 Streaming Movie</option>
+                    <option value="🎵">🎵 Music Subscription</option>
+                    <option value="🕌">🕌 Mosque / Islamic Charity</option>
+                    <option value="💡">💡 Utility Bills</option>
+                  </select>
+                </div>
+
+                <button 
+                  type="submit" 
+                  className="w-full py-3.5 bg-[#8FAF9B] text-white font-bold text-xs rounded-xl active:scale-95 transition-all shadow-md"
+                >
+                  Add Subscription
+                </button>
+              </form>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </div>
