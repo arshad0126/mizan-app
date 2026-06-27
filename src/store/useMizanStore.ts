@@ -6,6 +6,7 @@ import {
   Goal,
   ZakatRecord,
   Settings,
+  CustomCategory,
   getAccounts,
   getTransactions,
   getBudgets,
@@ -36,6 +37,7 @@ interface MizanState {
   userName: string;
   userPin: string;
   theme: 'light' | 'dark';
+  customCategories: CustomCategory[];
   
   // App UX States
   isLoading: boolean;
@@ -53,6 +55,7 @@ interface MizanState {
     initialAccounts: { name: string; type: Account['type']; balance: number; color: string }[]
   ) => Promise<void>;
   toggleTheme: () => Promise<void>;
+  addCustomCategory: (name: string, type: 'expense' | 'income' | 'sadaqah') => Promise<void>;
   addTransaction: (tx: Omit<Transaction, 'id'>) => Promise<void>;
   addAccount: (acc: Account) => Promise<void>;
   updateBudget: (category: string, allocated: number) => Promise<void>;
@@ -77,6 +80,7 @@ export const useMizanStore = create<MizanState>((set, get) => ({
   userName: '',
   userPin: '',
   theme: 'light',
+  customCategories: [],
   
   isLoading: true,
   activeTab: 'home',
@@ -96,12 +100,14 @@ export const useMizanStore = create<MizanState>((set, get) => ({
       let userName = 'Guest';
       let userPin = '';
       let theme: 'light' | 'dark' = 'light';
+      let customCategories: CustomCategory[] = [];
 
       if (settings) {
         isOnboarded = settings.isOnboarded;
         userName = settings.userName;
         userPin = settings.userPin;
         theme = settings.theme;
+        customCategories = settings.customCategories || [];
 
         // Apply theme color class to HTML element
         if (typeof document !== 'undefined') {
@@ -136,6 +142,7 @@ export const useMizanStore = create<MizanState>((set, get) => ({
         userName,
         userPin,
         theme,
+        customCategories,
         isLocked,
         isLoading: false,
       });
@@ -206,6 +213,7 @@ export const useMizanStore = create<MizanState>((set, get) => ({
         budgets: defaultBudgets,
         transactions: [],
         zakatRecords: [],
+        customCategories: [],
         isLocked: false,
         isLoading: false,
       });
@@ -243,6 +251,34 @@ export const useMizanStore = create<MizanState>((set, get) => ({
     }
 
     set({ theme: newTheme });
+  },
+
+  addCustomCategory: async (name, type) => {
+    const settings = await getSettings();
+    const currentCats = settings?.customCategories || [];
+    
+    // Check if already exists to avoid duplicates
+    if (currentCats.some(c => c.name.toLowerCase() === name.trim().toLowerCase() && c.type === type)) {
+      return;
+    }
+
+    const newCat = { name: name.trim(), type };
+    const updatedCats = [...currentCats, newCat];
+
+    if (settings) {
+      await saveSettings({ ...settings, customCategories: updatedCats });
+    } else {
+      await saveSettings({
+        id: 'app_settings',
+        userName: get().userName || 'Arshad',
+        userPin: get().userPin || '',
+        isOnboarded: get().isOnboarded,
+        theme: get().theme,
+        customCategories: updatedCats,
+      });
+    }
+
+    set({ customCategories: updatedCats });
   },
 
   addTransaction: async (txData) => {

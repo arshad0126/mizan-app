@@ -59,12 +59,18 @@ export interface ZakatRecord {
   isPaid: boolean;
 }
 
+export interface CustomCategory {
+  name: string;
+  type: 'expense' | 'income' | 'sadaqah';
+}
+
 export interface Settings {
   id: string; // 'app_settings'
   userName: string;
   userPin: string;
   isOnboarded: boolean;
   theme: 'light' | 'dark';
+  customCategories?: CustomCategory[];
 }
 
 let dbInstance: IDBDatabase | null = null;

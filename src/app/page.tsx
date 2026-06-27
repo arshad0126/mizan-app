@@ -338,12 +338,21 @@ export default function Dashboard() {
                     <div key={b.category} className="flex flex-col space-y-2 border-b border-[#ECECEC] dark:border-[#2C322E] last:border-none pb-4 last:pb-0">
                       <div className="flex justify-between items-center text-xs font-bold text-[#1E1E1E] dark:text-[#F7F9F7]">
                         <span>{b.category}</span>
-                        <div className="flex items-center space-x-1.5">
-                          <span className="text-[#757575] dark:text-[#9AA09C]">Spent:</span>
-                          <span className={isOver ? 'text-[#D66C6C]' : 'text-[#607567] dark:text-[#8FAF9B]'}>
-                            {formatAmount(b.spent, privacyMode)}
+                        <div className="flex items-center space-x-2">
+                          {b.allocated > 0 && (
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              b.allocated - b.spent >= 0 
+                                ? 'bg-[#63A66F]/10 text-[#63A66F]' 
+                                : 'bg-[#D66C6C]/10 text-[#D66C6C]'
+                            }`}>
+                              {b.allocated - b.spent >= 0 
+                                ? `${formatAmount(b.allocated - b.spent, privacyMode)} left` 
+                                : `-${formatAmount(b.spent - b.allocated, privacyMode)} over`}
+                            </span>
+                          )}
+                          <span className="text-[#757575] dark:text-[#9AA09C] font-semibold">
+                            {formatAmount(b.spent, privacyMode)} / {formatAmount(b.allocated, privacyMode)}
                           </span>
-                          <span className="text-[#757575] dark:text-[#9AA09C] font-medium">/ {formatAmount(b.allocated, privacyMode)}</span>
                         </div>
                       </div>
 

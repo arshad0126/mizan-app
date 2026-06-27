@@ -12,7 +12,9 @@ interface TransactionWizardProps {
 }
 
 export default function TransactionWizard({ isOpen, onClose }: TransactionWizardProps) {
-  const { accounts, addTransaction } = useMizanStore();
+  const { accounts, addTransaction, customCategories, addCustomCategory } = useMizanStore();
+  const [showCustomInput, setShowCustomInput] = useState(false);
+  const [customCatName, setCustomCatName] = useState('');
 
   const [type, setType] = useState<'expense' | 'income' | 'sadaqah'>('expense');
   const [accountId, setAccountId] = useState(accounts[0]?.id || '');
@@ -217,6 +219,7 @@ export default function TransactionWizard({ isOpen, onClose }: TransactionWizard
           <div className="flex flex-col">
             <label className="text-xxs font-bold text-[#757575] dark:text-[#9AA09C] tracking-wider uppercase mb-2 ml-1">CATEGORY</label>
             <div className="grid grid-cols-3 gap-2">
+              {/* Default Categories */}
               {categoriesMap[type].map((catOpt) => (
                 <button
                   key={catOpt.name}
@@ -231,7 +234,70 @@ export default function TransactionWizard({ isOpen, onClose }: TransactionWizard
                   {catOpt.name}
                 </button>
               ))}
+
+              {/* Custom Categories */}
+              {customCategories
+                .filter((c) => c.type === type)
+                .map((catOpt) => (
+                  <button
+                    key={catOpt.name}
+                    type="button"
+                    onClick={() => setCategory(catOpt.name)}
+                    className={`py-2 px-3 rounded-xl border text-xs font-semibold text-center transition-all ${
+                      category === catOpt.name
+                        ? 'bg-[#8FAF9B]/10 border-[#8FAF9B] text-[#607567] dark:text-[#8FAF9B] scale-[1.03]'
+                        : 'bg-white dark:bg-[#1E221E] border-[#ECECEC] dark:border-[#2C322E] text-[#1E1E1E] dark:text-[#F7F9F7] hover:border-[#8FAF9B]'
+                    }`}
+                  >
+                    {catOpt.name}
+                  </button>
+                ))}
+
+              {/* Custom Category Button Trigger */}
+              {!showCustomInput && (
+                <button
+                  type="button"
+                  onClick={() => setShowCustomInput(true)}
+                  className="py-2 px-3 rounded-xl border border-dashed border-[#8FAF9B] text-xs font-bold text-[#607567] dark:text-[#8FAF9B] text-center bg-transparent hover:bg-[#8FAF9B]/5 active:scale-95 transition-all"
+                >
+                  + Custom
+                </button>
+              )}
             </div>
+
+            {/* Custom Category Input Panel */}
+            {showCustomInput && (
+              <div className="mt-3 flex space-x-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                <input
+                  type="text"
+                  placeholder="e.g. Giving to wife"
+                  value={customCatName}
+                  onChange={(e) => setCustomCatName(e.target.value)}
+                  className="w-full p-2.5 bg-white dark:bg-[#1E221E] border border-[#ECECEC] dark:border-[#2C322E] rounded-xl text-xs font-semibold text-[#1E1E1E] dark:text-[#F7F9F7] outline-none"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!customCatName.trim()) return;
+                    await addCustomCategory(customCatName.trim(), type);
+                    setCategory(customCatName.trim());
+                    setCustomCatName('');
+                    setShowCustomInput(false);
+                  }}
+                  className="px-4 bg-[#607567] text-white font-bold text-xs rounded-xl active:scale-95 transition-all"
+                >
+                  Add
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowCustomInput(false); setCustomCatName(''); }}
+                  className="px-3 border border-[#ECECEC] dark:border-[#2C322E] text-[#757575] dark:text-[#9AA09C] font-bold text-xs rounded-xl"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Details */}
